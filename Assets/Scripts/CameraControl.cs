@@ -11,9 +11,11 @@ public class CameraControl : MonoBehaviour
 
 	Camera _camera;
 	float _velocity;
+	float _z;
 	
 	void Awake() {
 		_camera = GetComponent<Camera>();
+		_z = _camera.transform.localPosition.z;
 	}
 
 	void Update() {
@@ -22,5 +24,7 @@ public class CameraControl : MonoBehaviour
 		// targetOrthographicSize += -wheel * wheelSensitivity;
 		// targetOrthographicSize = Mathf.Clamp(targetOrthographicSize, 3, 100);
 		_camera.orthographicSize = Mathf.SmoothDamp(_camera.orthographicSize, targetOrthographicSize, ref _velocity, zoomDuration);
+		var p = _camera.transform.localPosition;
+		_camera.transform.localPosition = new Vector3(p.x, p.y, _z);
 	}
 }
