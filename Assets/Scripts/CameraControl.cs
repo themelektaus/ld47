@@ -13,6 +13,7 @@ public class CameraControl : MonoBehaviour
 	float _velocity;
 	
 	void Awake() {
+		Application.targetFrameRate = 60;
 		_camera = GetComponent<Camera>();
 	}
 

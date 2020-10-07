@@ -110,7 +110,7 @@ public class BatEnemy2D : MonoBehaviour, IObjective
 
 	public void ReceiveDamage(float damage) {
 		AudioManager.instance.PlayHit();
-		EZCameraShake.CameraShaker.Instance.ShakeOnce(.4f, 3f, .1f, 1f);
+		EZCameraShake.CameraShaker.Instance.ShakeOnce(3, 4, .1f, 1f);
 		var effect = Instantiate(hitEffect);
 		effect.transform.position = affector.position;
 		state = State.Attack;
