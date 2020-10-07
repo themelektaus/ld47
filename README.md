@@ -2,4 +2,4 @@
 **Ludum Dare 47**
 
 ## Current Afterparty Release
-- https://cloudbase.tk/ld47/afterparty/2020-10-07/
+https://cloudbase.tk/ld47/afterparty/2020-10-07/
