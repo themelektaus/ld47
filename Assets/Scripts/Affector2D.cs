@@ -7,6 +7,7 @@ public class Affector2D : MonoBehaviour
 	public bool isKinematic;
 	public float localVelocityX;
 	public Vector2 xPrecition = new Vector2(.1f, .5f);
+	public float downMultiplier = 1;
 
 	public Vector2 kinematicMovement;
 	public Animator animator;
@@ -69,7 +70,11 @@ public class Affector2D : MonoBehaviour
 		} else {
 			Vector2 localVelocity = body.transform.InverseTransformDirection(body.velocity);
 			localVelocity.y += velocity.y;
-			localVelocity -= Physics2D.gravity * Time.fixedDeltaTime * activeGravitation.gravityFactor;
+			float factor = activeGravitation.gravityFactor;
+			if (localVelocity.y < 0) {
+				factor *= downMultiplier;
+			}
+			localVelocity -= Physics2D.gravity * Time.fixedDeltaTime * factor;
 			localVelocity.x = Mathf.SmoothDamp(localVelocity.x, localVelocityX, ref velocity.x, grounded ? xPrecition.x : xPrecition.y);
 			body.velocity = body.transform.TransformDirection(localVelocity);
 			velocity.y = 0;

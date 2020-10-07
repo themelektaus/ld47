@@ -39,7 +39,7 @@ public class AudioManager : MonoBehaviour
 	}
 
 	public void PlaySuccess() {
-		Play(successClip, .2f, 2);
+		Play(successClip, .3f, 2);
 	}
 
 	public void PlayHit() {

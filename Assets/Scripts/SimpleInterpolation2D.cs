@@ -9,12 +9,6 @@ public class SimpleInterpolation2D : MonoBehaviour
 	public bool fixedUpdate;
 	public bool lateUpdate;
 
-	Vector2 localPosition = Vector3.zero;
-
-	public void SetPositionImmediatelly() {
-		source.position = target.position;
-	}
-
 	void Update() {
 		if (fixedUpdate == lateUpdate) {
 			OnUpdate();
@@ -60,7 +54,7 @@ public class SimpleInterpolation2D : MonoBehaviour
 		p = target.position;
 		var targetPosition = new Vector2(p.x, p.y);
 
-		localPosition = targetPosition - sourcePosition;
+		Vector2 localPosition = targetPosition - sourcePosition;
 
 		float x = interpolationSpeed.x;
 		float y = interpolationSpeed.y;
@@ -73,11 +67,15 @@ public class SimpleInterpolation2D : MonoBehaviour
 		UpdateValue(ref newPosition.x, targetPosition.x, x);
 		UpdateValue(ref newPosition.y, targetPosition.y, y);
 
-		source.position = new Vector3(
-			newPosition.x,
-			newPosition.y,
-			source.position.z
-		);
+		var sourceLocalZ = source.localPosition.z;
+		sourcePosition = source.position;
+		sourcePosition.x = newPosition.x;
+		sourcePosition.y = newPosition.y;
+		source.position = sourcePosition;
+
+		var sourceLocalPosition = source.localPosition;
+		sourceLocalPosition.z = sourceLocalZ;
+		source.localPosition = sourceLocalPosition;
 	}
 
 	void SetValue(ref float localValue, float interpolationValue) {

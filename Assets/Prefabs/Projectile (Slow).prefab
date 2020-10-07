@@ -43,9 +43,25 @@ PrefabInstance:
       propertyPath: m_Color.b
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4029800296893457621, guid: 4acb21dea328839448e65c67bd1dcacc, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.r
+      value: 0.42352942
+      objectReference: {fileID: 0}
+    - target: {fileID: 4029800296893457621, guid: 4acb21dea328839448e65c67bd1dcacc, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.g
+      value: 0.16014019
+      objectReference: {fileID: 0}
+    - target: {fileID: 4029800296893457621, guid: 4acb21dea328839448e65c67bd1dcacc, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.b
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4029800296893457621, guid: 4acb21dea328839448e65c67bd1dcacc, type: 3}
+      propertyPath: EmissionModule.rateOverTime.scalar
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 7927208881849395952, guid: 4acb21dea328839448e65c67bd1dcacc, type: 3}
       propertyPath: m_Color.a
-      value: 1
+      value: 0.7019608
       objectReference: {fileID: 0}
     - target: {fileID: 7927208881849395952, guid: 4acb21dea328839448e65c67bd1dcacc, type: 3}
       propertyPath: m_Color.r

@@ -9,6 +9,7 @@ public class Projectile : MonoBehaviour
 	public float damage = 1;
 	public float speed = 20;
 	public GameObject sprites;
+	public ParticleSystem trailEffect;
 
 	bool destroyed;
 
@@ -55,7 +56,9 @@ public class Projectile : MonoBehaviour
 	}
 
 	IEnumerator CustomDestroyRoutine() {
-		yield return new WaitForSeconds(5);
+		yield return new WaitForSeconds(.05f);
+		trailEffect.Stop();
+		yield return new WaitForSeconds(4);
 		Destroy(gameObject);
 	}
 

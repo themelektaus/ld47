@@ -6,7 +6,12 @@ public class GlorryEnd : MonoBehaviour
 	public CanvasGroup canvasGroup;
 
 	void OnTriggerEnter2D(Collider2D collision) {
-		StartCoroutine(GameDone());
+		if (collision.TryGetComponent<Projectile>(out _)) {
+			return;
+		}
+		if (collision.GetComponentInParent<Player2D>()) {
+			StartCoroutine(GameDone());
+		}
 	}
 
 	IEnumerator GameDone() {

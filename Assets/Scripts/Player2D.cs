@@ -55,6 +55,9 @@ public class Player2D : MonoBehaviour, IObjective
 	}
 
 	void ResetGame() {
+		foreach (var changeRing in FindObjectsOfType<ChangeRing>(true)) {
+			changeRing.activated = false;
+		}
 		foreach (var enemy in FindObjectsOfType<BatEnemy2D>(true)) {
 			enemy.OnResetGame();
 		}
@@ -116,7 +119,7 @@ public class Player2D : MonoBehaviour, IObjective
 			jumpTime = Mathf.Max(0, jumpTime - Time.deltaTime);
 		}
 		if (Input.GetMouseButtonDown(0)) {
-			AudioManager.instance.Play(wep_AO_nShootClip, 1, 1);
+			AudioManager.instance.Play(wep_AO_nShootClip, .6f, 1);
 			Projectile.Spawn(affector, wepaonFront.position, weaponProjectile, transform, GetMouseWorldPosition());
 		}
 	}
@@ -133,7 +136,7 @@ public class Player2D : MonoBehaviour, IObjective
 
 	public void ReceiveDamage(float damage) {
 		_health -= 1;
-		EZCameraShake.CameraShaker.Instance.ShakeOnce(5, 5, .1f, 1f);
+		EZCameraShake.CameraShaker.Instance.ShakeOnce(.7f, 6.1f, .1f, 1f);
 		AudioManager.instance.PlayPlayerHit();
 	}
 

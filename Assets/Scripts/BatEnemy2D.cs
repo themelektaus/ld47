@@ -6,8 +6,7 @@ public class BatEnemy2D : MonoBehaviour, IObjective
 	public enum State
 	{
 		Idle,
-		Attack,
-		AfterMadeDamage
+		Attack
 	}
 
 	public int ringIndex;
@@ -28,9 +27,10 @@ public class BatEnemy2D : MonoBehaviour, IObjective
 
 	Vector2 startPosition;
 	Vector2 randomPosition;
-	float stateTime;
 	Affector2D affector;
 	float projectileTime;
+	float alternativeAttackTime;
+	Vector2 alternativeAttackDirection;
 
 	float _health;
 
@@ -65,13 +65,6 @@ public class BatEnemy2D : MonoBehaviour, IObjective
 			SwitchToIdle();
 			return;
 		}
-		if (state == State.AfterMadeDamage) {
-			stateTime -= Time.deltaTime;
-			if (stateTime <= 0) {
-				state = State.Attack;
-			}
-			return;
-		}
 		if (state == State.Attack) {
 			if (projectile) {
 				if (projectileTime > 0) {
@@ -99,37 +92,31 @@ public class BatEnemy2D : MonoBehaviour, IObjective
 				}
 				break;
 			case State.Attack:
-				direction = Utils.GetDirection2D(affector.position, Player2D.instance.affector.position);
+				var playerPosition = Player2D.instance.affector.position;
+				if (Vector2.Distance(affector.position, playerPosition) < 2) {
+					alternativeAttackTime = .25f;
+					alternativeAttackDirection = Utils.GetDirection2D(playerPosition, affector.position);
+				}
+				if (alternativeAttackTime > 0) {
+					alternativeAttackTime -= Time.fixedDeltaTime;
+					direction = alternativeAttackDirection;
+				} else {
+					direction = Utils.GetDirection2D(affector.position, playerPosition);
+				}
 				affector.kinematicMovement = direction * attackMoveSpeed;
-				break;
-			case State.AfterMadeDamage:
-				direction = Utils.GetDirection2D(Player2D.instance.affector.position, affector.position);
-				affector.kinematicMovement = direction * afterMadeDamageMoveSpeed;
 				break;
 		}
 	}
 
 	public void ReceiveDamage(float damage) {
 		AudioManager.instance.PlayHit();
+		EZCameraShake.CameraShaker.Instance.ShakeOnce(.4f, 3f, .1f, 1f);
 		var effect = Instantiate(hitEffect);
 		effect.transform.position = affector.position;
 		state = State.Attack;
 		_health -= damage;
 		if (_health <= 0) {
 			gameObject.SetActive(false);
-		}
-	}
-
-	void OnTriggerEnter2D(Collider2D collision) {
-		if (state != State.Attack) {
-			return;
-		}
-		if (collision.TryGetComponent<IObjective>(out var collisionObjective)) {
-			if (!collision.CompareTag(tag)) {
-				collisionObjective.ReceiveDamage(1);
-				state = State.AfterMadeDamage;
-				stateTime = .5f;
-}
 		}
 	}
 
