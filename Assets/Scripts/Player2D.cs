@@ -136,7 +136,7 @@ public class Player2D : MonoBehaviour, IObjective
 
 	public void ReceiveDamage(float damage) {
 		_health -= 1;
-		EZCameraShake.CameraShaker.Instance.ShakeOnce(5, 7, .1f, 1f);
+		CameraControl.ShakeOnce(CameraControl.instance.playerReceiveDamageShake);
 		AudioManager.instance.PlayPlayerHit();
 	}
 
