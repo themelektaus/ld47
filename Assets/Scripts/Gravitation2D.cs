@@ -4,7 +4,7 @@ public class Gravitation2D : MonoBehaviour
 {
 	public float gravityFactor = -2;
 
-    Affector2D[] affectors;
+    Attractor2D[] affectors;
 
 	public Vector2 position {
 		get {
@@ -14,7 +14,7 @@ public class Gravitation2D : MonoBehaviour
 	}
 
 	void Awake() {
-		affectors = FindObjectsOfType<Affector2D>();
+		affectors = FindObjectsOfType<Attractor2D>();
 		foreach (var affector in affectors) {
 			affector.Register(this);
 		}

@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-public class Affector2D : MonoBehaviour
+public class Attractor2D : MonoBehaviour
 {
 	public bool isKinematic;
 	public float localVelocityX;

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-[RequireComponent(typeof(Affector2D))]
+[RequireComponent(typeof(Attractor2D))]
 public class Player2D : MonoBehaviour, IObjective
 {
 	public static Player2D instance;
@@ -17,10 +17,9 @@ public class Player2D : MonoBehaviour, IObjective
 	public Transform hand;
 	public Projectile weaponProjectile;
 	public Transform wepaonFront;
-	public AudioClip wep_AO_nShootClip;
-	// public Weapon weapon;
+	public AudioClip wepaonShootClip;
 
-	[System.NonSerialized] public Affector2D affector;
+	[System.NonSerialized] public Attractor2D affector;
 
 	bool jumping = true;
 	float jumpTime;
@@ -30,7 +29,7 @@ public class Player2D : MonoBehaviour, IObjective
 
 	void Awake() {
 		instance = this;
-		affector = GetComponent<Affector2D>();
+		affector = GetComponent<Attractor2D>();
 		startPosition = affector.position;
 		_health = health;
 	}
@@ -119,7 +118,7 @@ public class Player2D : MonoBehaviour, IObjective
 			jumpTime = Mathf.Max(0, jumpTime - Time.deltaTime);
 		}
 		if (Input.GetMouseButtonDown(0)) {
-			AudioManager.instance.Play(wep_AO_nShootClip, .6f, 1);
+			AudioManager.instance.Play(wepaonShootClip, .6f, 1);
 			Projectile.Spawn(affector, wepaonFront.position, weaponProjectile, transform, GetMouseWorldPosition());
 		}
 	}
@@ -136,7 +135,7 @@ public class Player2D : MonoBehaviour, IObjective
 
 	public void ReceiveDamage(float damage) {
 		_health -= 1;
-		CameraControl.ShakeOnce(CameraControl.instance.playerReceiveDamageShake);
+		CameraShake2D.Add(CameraControl.instance.playerReceiveDamageShake);
 		AudioManager.instance.PlayPlayerHit();
 	}
 

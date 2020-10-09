@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Grounder2D : MonoBehaviour
 {
-	List<Collider2D> collisions = new List<Collider2D>();
+	readonly List<Collider2D> collisions = new List<Collider2D>();
 
 	public bool grounded {
 		get {
@@ -15,7 +15,7 @@ public class Grounder2D : MonoBehaviour
 		if (collision.isTrigger) {
 			return;
 		}
-		if (collision.TryGetComponent<Affector2D>(out _)) {
+		if (collision.TryGetComponent<Attractor2D>(out _)) {
 			return;
 		}
 		collisions.Add(collision);

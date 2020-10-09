@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
-    [System.NonSerialized] public Affector2D owner;
+    [System.NonSerialized] public Attractor2D owner;
 	[System.NonSerialized] public Vector2 direction;
 
 	public float damage = 1;
@@ -62,7 +62,7 @@ public class Projectile : MonoBehaviour
 		Destroy(gameObject);
 	}
 
-	public static void Spawn(Affector2D sourceAffector, Vector2 position, Projectile projectile, Transform parent, Vector2 targetPosition) {
+	public static void Spawn(Attractor2D sourceAffector, Vector2 position, Projectile projectile, Transform parent, Vector2 targetPosition) {
 		var projectileInstance = Instantiate(projectile, parent);
 		var a = projectileInstance.transform.position;
 		var b = position;

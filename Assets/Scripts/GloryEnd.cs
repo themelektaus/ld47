@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-public class GlorryEnd : MonoBehaviour
+public class GloryEnd : MonoBehaviour
 {
 	public CanvasGroup canvasGroup;
 

@@ -89,8 +89,10 @@ MonoBehaviour:
   isKinematic: 0
   localVelocityX: 0
   xPrecition: {x: 0.1, y: 0.5}
+  downMultiplier: 1
   kinematicMovement: {x: 0, y: 0}
   animator: {fileID: 7661233456101337043}
+  velocity: {x: 0, y: 0}
 --- !u!114 &7037011637594106148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103,56 +105,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34491f523f530bf4a8c4f55745cae1fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 25
+  health: 40
   moveSpeed: 13
-  jumpForce: 4
+  jumpForce: 4.2
   jumpCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
       value: 1
-      inSlope: -1.673286
-      outSlope: -1.673286
-      tangentMode: 34
+      inSlope: -1.9966509
+      outSlope: -1.9966509
+      tangentMode: 0
       weightedMode: 0
       inWeight: 0
+      outWeight: 0.8474445
+    - serializedVersion: 3
+      time: 0.10996164
+      value: 0.71683425
+      inSlope: -2.1065512
+      outSlope: -2.1065512
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33409047
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.1182296
-      value: 0.8021681
-      inSlope: -1.8814243
-      outSlope: -1.8814243
+      time: 0.41406006
+      value: 0.18422318
+      inSlope: -0.7925866
+      outSlope: -0.7925866
       tangentMode: 0
       weightedMode: 0
       inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 0.2136178
-      value: 0.544393
-      inSlope: -3.152399
-      outSlope: -3.152399
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.22252598
-      outWeight: 0.09065491
-    - serializedVersion: 3
-      time: 0.4213881
-      value: 0.10148731
-      inSlope: -0.63019365
-      outSlope: -0.63019365
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.26507884
-      outWeight: 0.08153935
+      outWeight: 0.33547264
     - serializedVersion: 3
       time: 1
-      value: 0
-      inSlope: -0.17539789
-      outSlope: -0.17539789
-      tangentMode: 34
+      value: -0.004425049
+      inSlope: -0.16024376
+      outSlope: -0.16024376
+      tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
+      inWeight: 0.29994908
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
@@ -164,7 +157,7 @@ MonoBehaviour:
   hand: {fileID: 825998192321229564}
   weaponProjectile: {fileID: 8473372537364280046, guid: 4acb21dea328839448e65c67bd1dcacc, type: 3}
   wepaonFront: {fileID: 7273134598065683999}
-  wep_AO_nShootClip: {fileID: 8300000, guid: ac1cb92a1965e4647aaf761a11a4dfd3, type: 3}
+  wepaonShootClip: {fileID: 8300000, guid: ac1cb92a1965e4647aaf761a11a4dfd3, type: 3}
 --- !u!114 &531335300699343275
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-[RequireComponent(typeof(Affector2D))]
+[RequireComponent(typeof(Attractor2D))]
 public class BatEnemy2D : MonoBehaviour, IObjective
 {
 	public enum State
@@ -27,7 +27,7 @@ public class BatEnemy2D : MonoBehaviour, IObjective
 
 	Vector2 startPosition;
 	Vector2 randomPosition;
-	Affector2D affector;
+	Attractor2D affector;
 	float projectileTime;
 	float alternativeAttackTime;
 	Vector2 alternativeAttackDirection;
@@ -35,7 +35,7 @@ public class BatEnemy2D : MonoBehaviour, IObjective
 	float _health;
 
 	void Awake() {
-		affector = GetComponent<Affector2D>();
+		affector = GetComponent<Attractor2D>();
 		startPosition = affector.position;
 		randomPosition = GetRandomPosition();
 		_health = health;
@@ -110,7 +110,7 @@ public class BatEnemy2D : MonoBehaviour, IObjective
 
 	public void ReceiveDamage(float damage) {
 		AudioManager.instance.PlayHit();
-		CameraControl.ShakeOnce(CameraControl.instance.enemyReceiveDamageShake);
+		CameraShake2D.Add(CameraControl.instance.enemyReceiveDamageShake);
 		var effect = Instantiate(hitEffect);
 		effect.transform.position = affector.position;
 		state = State.Attack;
