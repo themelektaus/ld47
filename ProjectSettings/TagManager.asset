@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 2
   tags:
   - Enemy
+  - Player Spawn Area
+  - Spawn Button
   layers:
   - Default
   - TransparentFX
@@ -39,6 +41,18 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Default Background
+    uniqueID: 3988018091
+    locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Default FX
+    uniqueID: 1896443493
+    locked: 0
+  - name: Default Foreground
+    uniqueID: 1087012165
+    locked: 0
+  - name: Default Foreground FX
+    uniqueID: 1720979189
     locked: 0

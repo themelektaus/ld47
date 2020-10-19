@@ -1,25 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <!-- Creator: CorelDRAW 2019 (64-Bit) -->
-<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="100%" height="100%" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
-viewBox="0 0 52.1338 35.3111"
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="52.1338mm" height="32.9627mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 2276.88 1439.6"
  xmlns:xlink="http://www.w3.org/1999/xlink"
  xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
  <defs>
   <style type="text/css">
    <![CDATA[
-    .fil0 {fill:#16053B}
     .fil2 {fill:#2260AB}
-    .fil1 {fill:gray;fill-rule:nonzero}
+    .fil1 {fill:#16053B;fill-rule:nonzero}
+    .fil0 {fill:gray;fill-rule:nonzero}
    ]]>
   </style>
  </defs>
  <g id="Ebene_x0020_1">
   <metadata id="CorelCorpID_0Corel-Layer"/>
-  <rect class="fil0" x="1.4111" y="18.3558" width="17.3302" height="15.5442"/>
-  <path class="fil1" d="M1.4111 16.9447l18.7413 0 0 18.3664 -20.1524 0 0 -18.3664 1.4111 0zm15.9191 2.8222l-14.508 0 0 12.722 14.508 0 0 -12.722z"/>
-  <rect class="fil0" x="1.4111" y="8.6985" width="49.3116" height="15.5442"/>
-  <path class="fil1" d="M1.4111 7.2874l50.7227 0 0 18.3664 -52.1338 0 0 -18.3664 1.4111 0zm47.9005 2.8222l-46.4894 0 0 12.722 46.4894 0 0 -12.722z"/>
-  <rect class="fil2" x="35.1952" width="9.4262" height="14.0894"/>
+  <path class="fil0" d="M880.13 1017.83l0 421.77 -880.13 0c0,-407.96 0,-815.93 0,-1223.9l2276.88 0 0 802.13 -1396.75 0z"/>
+  <path class="fil1" d="M2153.62 338.96l-2030.36 0c0,325.8 0,651.59 0,977.39l633.62 0 0 -421.77 1396.75 0 0 -555.62z"/>
+  <rect class="fil2" x="1691.39" y="-0" width="308.14" height="308.14"/>
  </g>
 </svg>
