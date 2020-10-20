@@ -1,10 +1,9 @@
-﻿using TNet;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace MT.Packages.LD47
 {
 	[RequireComponent(typeof(Attractor))]
-	public class BatEnemy : SpawnerObject, IHostile
+	public class BatEnemy : Mirror.NetworkBehaviour, IHostile
 	{
 		public enum State
 		{
@@ -40,19 +39,12 @@ namespace MT.Packages.LD47
 		float alternativeAttackTime;
 		Vector2 alternativeAttackDirection;
 
-		protected override void Awake() {
-			base.Awake();
+		public override void OnStartServer() {
+			base.OnStartServer();
 			attractor = GetComponent<Attractor>();
 			timer = new Timer(.4f);
 			animator = GetComponentInChildren<Animator>();
-		}
-
-		protected override void OnHostAwake() {
 			currentHealth = health;
-		}
-
-		public override void OnStart() {
-			base.OnStart();
 			startPosition = transform.position;
 			randomPosition = GetRandomPosition();
 			position = new SmoothVector3(() => transform.position, x => transform.position = x, .5f);
@@ -62,15 +54,8 @@ namespace MT.Packages.LD47
 			return startPosition + Random.insideUnitCircle * homeRadius;
 		}
 
-		protected override void OnRemoteUpdate() {
-			attractor.state = Attractor.State.Frozen;
-			position.Update();
-		}
-
-		protected override void OnHostUpdate() {
-			if (timer.Update()) {
-				this.Send(nameof(RFC_UpdateRemoteData), Target.Others, transform.position, currentHealth);
-			}
+		[Mirror.ServerCallback]
+		void Update() {
 			if (IsDead()) {
 				attractor.state = Attractor.State.Frozen;
 				return;
@@ -89,9 +74,9 @@ namespace MT.Packages.LD47
 				if (projectileTime > 0) {
 					projectileTime -= Time.deltaTime;
 				} else {
-					if (NetworkPool.TryGet<Projectile, ProjectilePool>(projectilePrefab, out var pool)) {
-						pool.Instantiate(tag, transform.position, player.sweetspot.position);
-					}
+					// if (NetworkPool.TryGet<Projectile, ProjectilePool>(projectilePrefab, out var pool)) {
+					// 	pool.Instantiate(tag, transform.position, player.sweetspot.position);
+					// }
 					projectileTime += projectileInterval;
 				}
 			} else if (aggroAggression && Vector2.Distance(transform.position, player.sweetspot.position) <= aggroRadius) {
@@ -99,8 +84,8 @@ namespace MT.Packages.LD47
 			}
 		}
 
-		protected override void OnFixedHostUpdate() {
-			base.OnFixedHostUpdate();
+		[Mirror.ServerCallback]
+		void FixedUpdate() {
 			if (IsDead()) {
 				return;
 			}
@@ -144,48 +129,48 @@ namespace MT.Packages.LD47
 			animator.SetBool("Dead", true);
 		}
 
-		public void ReceiveDamage(int senderID, string senderTag, float damage) {
+		public void ReceiveDamage(string senderTag, float damage) {
 			if (damage == 0) {
 				return;
 			}
-			this.Send(nameof(RFC_TakeDamage), Target.Host, damage);
-			this.Send(nameof(RFC_TakeDamageFX), Target.All);
-			this.Send(nameof(RFC_TakeDamageSound), senderID);
+			// this.Send(nameof(RFC_TakeDamage), Target.Host, damage);
+			// this.Send(nameof(RFC_TakeDamageFX), Target.All);
+			// this.Send(nameof(RFC_TakeDamageSound), senderID);
 		}
 
-		[RFC]
-		void RFC_UpdateRemoteData(Vector3 targetPosition, float currentHealth) {
-			if (!position) {
-				return;
-			}
-			position.target = targetPosition;
-			this.currentHealth = currentHealth;
-			if (currentHealth <= 0) {
-				SetDead();
-			}
-		}
+		// [RFC]
+		// void RFC_UpdateRemoteData(Vector3 targetPosition, float currentHealth) {
+		// 	if (!position) {
+		// 		return;
+		// 	}
+		// 	position.target = targetPosition;
+		// 	this.currentHealth = currentHealth;
+		// 	if (currentHealth <= 0) {
+		// 		SetDead();
+		// 	}
+		// }
 
-		[RFC]
-		void RFC_TakeDamage(float damage) {
-			state = State.Attack;
-			currentHealth -= damage;
-			if (currentHealth <= 0) {
-				SetDead();
-				gameObject.DestroySelf(1);
-			}
-		}
+		// [RFC]
+		// void RFC_TakeDamage(float damage) {
+		// 	state = State.Attack;
+		// 	currentHealth -= damage;
+		// 	if (currentHealth <= 0) {
+		// 		SetDead();
+		// 		gameObject.DestroySelf(1);
+		// 	}
+		// }
 
-		[RFC]
-		void RFC_TakeDamageFX() {
-			var effect = Instantiate(hitEffect).ToTempInstance();
-			effect.transform.position = transform.position;
-		}
+		// [RFC]
+		// void RFC_TakeDamageFX() {
+		// 	var effect = Instantiate(hitEffect).ToTempInstance();
+		// 	effect.transform.position = transform.position;
+		// }
 
-		[RFC]
-		void RFC_TakeDamageSound() {
-			hitSoundEffect.Play(this);
-			CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
-		}
+		// [RFC]
+		// void RFC_TakeDamageSound() {
+		// 	hitSoundEffect.Play(this);
+		// 	CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
+		// }
 
 		void OnDrawGizmosSelected() {
 			Gizmos.color = Color.red;

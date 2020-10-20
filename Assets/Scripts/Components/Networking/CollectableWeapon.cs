@@ -1,34 +1,22 @@
-﻿using TNet;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace MT.Packages.LD47
 {
-    public class CollectableWeapon : SpawnerObject
+    public class CollectableWeapon : Mirror.NetworkBehaviour
     {
         [SerializeField, ResourcePath("prefab")] string weapon = null;
 
 		Weapon weaponInstance;
 
-		protected override void Awake() {
-			base.Awake();
-			weaponInstance = Resources.Load<Weapon>(weapon);
-		}
+		// protected override void Awake() {
+		// 	base.Awake();
+		// 	weaponInstance = Resources.Load<Weapon>(weapon);
+		// }
 
-		protected override void OnHostAwake() {
-			
-		}
-
-		protected override void OnHostUpdate() {
-			
-		}
-
-		protected override void OnRemoteUpdate() {
-			
-		}
-
+		[Mirror.ServerCallback]
 		void OnTriggerStay2D(Collider2D collision) {
 			if (collision.TryGetComponent<Player>(out var player)) {
-				if (player.tno.isMine && !player.IsDead()) {
+				if (/* player.tno.isMine && */ !player.IsDead()) {
 					if (player.weaponInstance.rank > weaponInstance.rank) {
 						return;
 					}
@@ -40,7 +28,7 @@ namespace MT.Packages.LD47
 					} else {
 						player.weapon = weapon;
 					}
-					gameObject.DestroySelf();
+					// gameObject.DestroySelf();
 				}
 			}
 		}

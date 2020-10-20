@@ -33,7 +33,7 @@ namespace MT.Packages.LD47
 		}
 
 		public void SpawnPlayer() {
-			MultiplayerGame.instance.spawnPlayer = true;
+			// MultiplayerGame.instance.spawnPlayer = true;
 		}
 	}
 }

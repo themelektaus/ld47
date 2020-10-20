@@ -1,13 +1,12 @@
-﻿using TNet;
-using UnityEngine;
+﻿using UnityEngine;
 using System.Linq;
 using E = UnityEngine.Events;
 using G = System.Collections.Generic;
+using Mirror;
 
 namespace MT.Packages.LD47
 {
-	[RequireComponent(typeof(TNObject))]
-	public class Player : TNBehaviour, IHostile
+	public class Player : NetworkBehaviour, IHostile
 	{
 		public static G.List<Player> players = new G.List<Player>();
 
@@ -32,7 +31,7 @@ namespace MT.Packages.LD47
 		[HideInInspector] public E.UnityEvent<float> onReceiveDamage = new E.UnityEvent<float>();
 
 		[ReadOnly] public Attractor attractor;
-		[ReadOnly] public float currentHealth;
+		[ReadOnly, SyncVar] public float currentHealth;
 
 		[ResourcePath("prefab")] public string weapon = null;
 		public Audio.SoundEffect hitSoundEffect = null;
@@ -50,9 +49,7 @@ namespace MT.Packages.LD47
 		[SerializeField] float jumpCurveDuration = .3f;
 		[SerializeField, Range(0, 1)] float airJumpForgiveness = .4f;
 
-		Timer sendRemoteDataTimer;
-		SmoothVector3 transformPosition;
-		SmoothVector3 trackingPosition;
+		[SyncVar] public Vector3 trackingPosition;
 
 		bool jumping;
 		float jumpTime;
@@ -61,38 +58,26 @@ namespace MT.Packages.LD47
 
 		[ReadOnly] public Weapon weaponInstance;
 
-		struct RemoteData
-		{
-			public Vector3 targetPosition;
-			public bool flipped;
-			public Vector3 targetTrackingPosition;
-			public float inputHorizontal;
-			public string weapon;
-			public bool dead;
-		}
-
-		protected override void Awake() {
-			base.Awake();
+		void Awake() {
 			attractor = GetComponent<Attractor>();
-			players.Add(this);
-
-			sendRemoteDataTimer = new Timer(.075f);
-
-			transformPosition = new SmoothVector3(
-				() => transform.position,
-				x => transform.position = x,
-				sendRemoteDataTimer.interval.x * 1.5f
-			);
-			trackingPosition = new SmoothVector3(
-				transform.position + Vector3.right * 3,
-				sendRemoteDataTimer.interval.x
-			);
-
-			currentHealth = health;
 		}
 
-		public void SetPosition(Vector3 position) {
-			transformPosition.value = position;
+		public override void OnStartServer() {
+			base.OnStartServer();
+			players.Add(this);
+		}
+
+		public override void OnStartClient() {
+			base.OnStartClient();
+			if (isLocalPlayer) {
+				attractor.state = Attractor.State.Normal;
+				trackingPosition = transform.position + Vector3.right * 3;
+				currentHealth = health;
+				gameObject.AddComponent<PlayerController>();
+				if (Camera.main.TryGetComponent<SimpleInterpolation>(out var interpolation)) {
+					interpolation.target = gameObject.transform;
+				}
+			}
 		}
 
 		public void SetDead() {
@@ -109,14 +94,13 @@ namespace MT.Packages.LD47
 		void Update() {
 			if (IsDead()) {
 				attractor.localVelocityX = 0;
-				SetTrackingPosition(transform.position + Vector3.right, false);
+				trackingPosition = transform.position + Vector3.right;
 			} else {
 				UpdateWeapon();
 				UpdateInput();
 				UpdateFlip();
 				UpdateBodyTracking();
 			}
-			UpdateRemoteData();
 		}
 
 		void UpdateWeapon() {
@@ -131,7 +115,7 @@ namespace MT.Packages.LD47
 				weaponInstance = Instantiate(Resources.Load<Weapon>(weapon), hand.GetChild(0));
 				weaponInstance.name = weapon;
 				weaponInstance.transform.localEulerAngles = new Vector3(0, 0, -90);
-				weaponInstance.owner = this;
+				weaponInstance.player = this;
 			}
 		}
 
@@ -168,7 +152,7 @@ namespace MT.Packages.LD47
 		}
 
 		void UpdateBodyTracking() {
-			var angle = Utils.GetAngle2D(hand.position, trackingPosition.current);
+			var angle = Utils.GetAngle2D(hand.position, trackingPosition);
 			if (animator.transform.localScale.x < 0) {
 				neck.eulerAngles = new Vector3(0, 0, angle - 90);
 				hand.eulerAngles = new Vector3(0, 0, angle - 180);
@@ -183,29 +167,10 @@ namespace MT.Packages.LD47
 			neck.localEulerAngles = eulerAngles;
 		}
 
-		void UpdateRemoteData() {
-			if (tno.hasBeenDestroyed) {
-				return;
-			}
-			if (!tno.isMine) {
-				transformPosition.Update();
-				UpdateTrackingPosition();
-				return;
-			}
-			if (!sendRemoteDataTimer.Update()) {
-				return;
-			}
-			tno.Send(nameof(RFC_UpdateRemoteData), Target.Others, new RemoteData {
-				targetPosition = transformPosition.current,
-				flipped = flipped,
-				targetTrackingPosition = trackingPosition.current,
-				inputHorizontal = inputHorizontal,
-				weapon = weapon,
-				dead = IsDead()
-			});
-		}
-
 		void FixedUpdate() {
+			if (!isLocalPlayer) {
+				return;
+			}
 			if (jumping) {
 				attractor.velocityY = jumpCurve.Evaluate(jumpCurveTime) * jumpForce;
 			}
@@ -215,14 +180,14 @@ namespace MT.Packages.LD47
 			return animator.GetBool("Dead");
 		}
 
-		public void ReceiveDamage(int senderID, string senderTag, float damage) {
+		public void ReceiveDamage(string senderTag, float damage) {
 			if (damage == 0) {
 				return;
 			}
-			this.Send(nameof(RFC_TakeDamage), Target.All, damage);
-			if (CompareTag(senderTag) && tno.ownerID != senderID) {
-				this.Send(nameof(RFC_TakeDamageSound), senderID);
-			}
+			// this.Send(nameof(RFC_TakeDamage), Target.All, damage);
+			// if (CompareTag(senderTag) && tno.ownerID != senderID) {
+			// 	this.Send(nameof(RFC_TakeDamageSound), senderID);
+			// }
 		}
 
 		public void Shoot(Vector2 targetPosition) {
@@ -231,45 +196,29 @@ namespace MT.Packages.LD47
 			}
 		}
 
-		public void SetTrackingPosition(Vector3 value, bool immediatelly) {
-			if (immediatelly) {
-				trackingPosition.value = value;
-				return;
-			}
-			trackingPosition.target = value;
-		}
+		// [RFC]
+		// void RFC_UpdateRemoteData(RemoteData data) {
+		// 	transformPosition.target = data.targetPosition;
+		// 	trackingPosition.target = data.targetTrackingPosition;
+		// 	flipped = data.flipped;
+		// 	inputHorizontal = data.inputHorizontal;
+		// 	weapon = data.weapon;
+		// 	if (data.dead) {
+		// 		SetDead();
+		// 	}
+		// }
 
-		public Vector3 GetTrackingPosition() {
-			return trackingPosition.current;
-		}
+		// [RFC]
+		// void RFC_TakeDamage(float damage) {
+		// 	var effect = Instantiate(hitEffect).ToTempInstance();
+		// 	effect.transform.position = attractor.body.worldCenterOfMass;
+		// 	onReceiveDamage.Invoke(damage);
+		// }
 
-		public void UpdateTrackingPosition() {
-			trackingPosition.Update();
-		}
-
-		[RFC]
-		void RFC_UpdateRemoteData(RemoteData data) {
-			transformPosition.target = data.targetPosition;
-			trackingPosition.target = data.targetTrackingPosition;
-			flipped = data.flipped;
-			inputHorizontal = data.inputHorizontal;
-			weapon = data.weapon;
-			if (data.dead) {
-				SetDead();
-			}
-		}
-
-		[RFC]
-		void RFC_TakeDamage(float damage) {
-			var effect = Instantiate(hitEffect).ToTempInstance();
-			effect.transform.position = attractor.body.worldCenterOfMass;
-			onReceiveDamage.Invoke(damage);
-		}
-
-		[RFC]
-		void RFC_TakeDamageSound() {
-			hitSoundEffect.Play(this);
-			CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
-		}
+		// [RFC]
+		// void RFC_TakeDamageSound() {
+		// 	hitSoundEffect.Play(this);
+		// 	CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
+		// }
 	}
 }

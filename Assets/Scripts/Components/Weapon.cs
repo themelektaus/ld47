@@ -4,11 +4,11 @@ namespace MT.Packages.LD47
 {
     public class Weapon : MonoBehaviour
     {
-		[ReadOnly] public Player owner;
+		[ReadOnly] public Player player;
 
 		public int rank;
 		
-		[SerializeField] Projectile projectilePrefab = null;
+		public Projectile projectile = null;
 		[SerializeField] Audio.SoundEffect shootSoundEffect = null;
         [SerializeField] Transform front = null;
 
@@ -40,7 +40,7 @@ namespace MT.Packages.LD47
 			currentAmmo = Mathf.Min(currentAmmo + Time.deltaTime * restockPerSecond, ammo);
 			shootTimer = Mathf.Max(0, shootTimer - Time.deltaTime);
 			if (!string.IsNullOrEmpty(fallbackWeapon) && currentAmmo < 1) {
-				owner.weapon = fallbackWeapon;
+				// ownerPlayer.weapon = fallbackWeapon;
 			}
 		}
 
@@ -58,10 +58,8 @@ namespace MT.Packages.LD47
 			castedTime = 0;
 			shootTimer = shootInterval;
 			currentAmmo--;
-			if (NetworkPool.TryGet<Projectile, ProjectilePool>(projectilePrefab, out var pool)) {
-				if (pool.Instantiate(tag, front.position, targetPosition)) {
-					shootSoundEffect.Play(this, front.position);
-				}
+			if (FindObjectOfType<ProjectilePool>().Instantiate(tag, front.position, targetPosition)) {
+				shootSoundEffect.Play(this, front.position);
 			}
 		}
 

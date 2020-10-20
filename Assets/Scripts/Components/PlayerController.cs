@@ -1,5 +1,4 @@
-﻿using TNet;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace MT.Packages.LD47
 {
@@ -29,7 +28,7 @@ namespace MT.Packages.LD47
 				player.currentHealth -= damage;
 				if (player.currentHealth <= 0) {
 					player.SetDead();
-					gameObject.DestroySelf(3);
+					// gameObject.DestroySelf(3);
 				}
 				player.hitSoundEffect.Play(this);
 				CameraShake.Add(CameraControl.instance.playerReceiveDamageShake);
@@ -68,7 +67,7 @@ namespace MT.Packages.LD47
 			player.inputHorizontal = Input.GetAxis("Horizontal");
 			player.inputJump = Input.GetButtonDown("Jump");
 			player.inputJumpHold = Input.GetButton("Jump");
-			player.SetTrackingPosition(Camera.main.ScreenToWorldPoint(Input.mousePosition), true);
+			player.trackingPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 			player.flipped = Input.mousePosition.x < Camera.main.WorldToScreenPoint(player.transform.position).x;
 			if (player.weaponInstance) {
 				void PlayerShoot() {
@@ -114,19 +113,18 @@ namespace MT.Packages.LD47
 			botJump = Mathf.Max(0, botJump - Time.deltaTime);
 			player.inputJumpHold = botJump > 0;
 			if (botSelectEnemyTimer.Update()) {
-				botCurrentEnemy = Spawner.GetRandomSpawnerObject<BatEnemy>();
+				// botCurrentEnemy = Spawner.GetRandomSpawnerObject<BatEnemy>();
 			}
-			if (botCurrentEnemy) {
-				player.SetTrackingPosition(botCurrentEnemy.transform.position, false);
-			} else {
-				var offset = player.inputHorizontal > 0 ? Vector3.right : Vector3.left;
-				player.SetTrackingPosition(transform.position + offset, false);
-			}
-			player.UpdateTrackingPosition();
-			player.flipped = Camera.main.WorldToScreenPoint(player.GetTrackingPosition()).x < Camera.main.WorldToScreenPoint(player.transform.position).x;
+			// if (botCurrentEnemy) {
+			// 	player.trackingPosition = botCurrentEnemy.transform.position;
+			// } else {
+			var offset = player.inputHorizontal > 0 ? Vector3.right : Vector3.left;
+			player.trackingPosition = transform.position + offset;
+			// }
+			player.flipped = Camera.main.WorldToScreenPoint(player.trackingPosition).x < Camera.main.WorldToScreenPoint(player.transform.position).x;
 			if (botInputShootTimer.Update()) {
 				if (botCurrentEnemy) {
-					player.Shoot(player.GetTrackingPosition());
+					player.Shoot(player.trackingPosition);
 				}
 			}
 		}

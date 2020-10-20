@@ -12,9 +12,6 @@ namespace MT.Packages.LD47
 	[ExecuteInEditMode]
 	public abstract class Unique : MonoBehaviour
 	{
-		protected abstract void OnStart();
-		protected abstract void OnUpdate();
-
 		[ReadOnly] public string ID;
 
 		string _ID;
@@ -31,9 +28,6 @@ namespace MT.Packages.LD47
 				}
 			}
 #endif
-			if (Application.isPlaying) {
-				OnStart();
-			}
 		}
 
 		void Reset() {
@@ -55,7 +49,6 @@ namespace MT.Packages.LD47
 		void Update() {
 			_ID = ID;
 			if (Application.isPlaying) {
-				OnUpdate();
 				return;
 			}
 #if UNITY_EDITOR

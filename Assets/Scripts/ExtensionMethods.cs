@@ -1,5 +1,4 @@
-﻿using TNet;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace MT.Packages.LD47
 {
@@ -36,28 +35,28 @@ namespace MT.Packages.LD47
 			return @this;
 		}
 
-		public static void Send(this TNBehaviour @this, string rfcName, int playerID) {
-			if (@this.tno && !@this.tno.hasBeenDestroyed) {
-				@this.tno.Send(rfcName, playerID);
-			}
-		}
+		// public static void Send(this TNBehaviour @this, string rfcName, int playerID) {
+		// 	if (@this.tno && !@this.tno.hasBeenDestroyed) {
+		// 		@this.tno.Send(rfcName, playerID);
+		// 	}
+		// }
 
-		public static void Send(this TNBehaviour @this, string rfcName, Target target) {
-			if (@this.tno && !@this.tno.hasBeenDestroyed) {
-				@this.tno.Send(rfcName, target);
-			}
-		}
+		// public static void Send(this TNBehaviour @this, string rfcName, Target target) {
+		// 	if (@this.tno && !@this.tno.hasBeenDestroyed) {
+		// 		@this.tno.Send(rfcName, target);
+		// 	}
+		// }
 
-		public static void Send(this TNBehaviour @this, string rfcName, Target target, object obj0) {
-			if (@this.tno && !@this.tno.hasBeenDestroyed) {
-				@this.tno.Send(rfcName, target, obj0);
-			}
-		}
+		// public static void Send(this TNBehaviour @this, string rfcName, Target target, object obj0) {
+		// 	if (@this.tno && !@this.tno.hasBeenDestroyed) {
+		// 		@this.tno.Send(rfcName, target, obj0);
+		// 	}
+		// }
 
-		public static void Send(this TNBehaviour @this, string rfcName, Target target, object obj0, object obj1) {
-			if (@this.tno && !@this.tno.hasBeenDestroyed) {
-				@this.tno.Send(rfcName, target, obj0, obj1);
-			}
-		}
+		// public static void Send(this TNBehaviour @this, string rfcName, Target target, object obj0, object obj1) {
+		// 	if (@this.tno && !@this.tno.hasBeenDestroyed) {
+		// 		@this.tno.Send(rfcName, target, obj0, obj1);
+		// 	}
+		// }
 	}
 }
