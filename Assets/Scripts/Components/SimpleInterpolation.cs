@@ -7,7 +7,8 @@ namespace MT.Packages.LD47
 		public Transform source;
 		public Transform target;
 
-		[SerializeField] Vector2 interpolationSpeed = new Vector2(30, 30);
+		public Vector2 interpolationSpeed = new Vector2(30, 30);
+
 		[SerializeField] bool includeRotation = false;
 		[SerializeField] bool fixedUpdate = false;
 		[SerializeField] bool lateUpdate = false;

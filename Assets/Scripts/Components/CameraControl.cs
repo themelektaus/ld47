@@ -18,9 +18,10 @@ namespace MT.Packages.LD47
 
 		Camera _camera;
 		float _velocity;
+		SimpleInterpolation _interpolation;
 
-		protected override void OnAwake() {
-			base.OnAwake();
+		protected override void Awake() {
+			base.Awake();
 			if (targetFrameRate == 0) {
 				Debug.LogWarning("Cannot setup a target framerate of 0. Fallback to -1");
 				Application.targetFrameRate = -1;
@@ -28,6 +29,7 @@ namespace MT.Packages.LD47
 				Application.targetFrameRate = targetFrameRate;
 			}
 			_camera = GetComponent<Camera>();
+			_interpolation = GetComponent<SimpleInterpolation>();
 		}
 
 		void Update() {
@@ -38,8 +40,14 @@ namespace MT.Packages.LD47
 			_camera.orthographicSize = Mathf.SmoothDamp(_camera.orthographicSize, targetOrthographicSize, ref _velocity, zoomDuration);
 		}
 
-		void OnDestroy() {
+		protected override void OnDestroy() {
 			Application.targetFrameRate = -1;
+			base.OnDestroy();
+		}
+
+		public void SetTarget(Transform target, float interpolationSpeed) {
+			_interpolation.target = target;
+			_interpolation.interpolationSpeed = Vector3.one * interpolationSpeed;
 		}
 	}
 }

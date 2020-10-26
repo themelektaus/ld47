@@ -27,7 +27,7 @@ namespace MT.Packages.LD47.Audio.Editor
 
 		void DrawCustom() {
 			if (UnityEngine.GUILayout.Button("Update Sound Effects")) {
-				Utils.UpdateSoundEffects(target as AudioLibrary);
+				Utils.UpdateSoundEffects(false);
 			}
 			if (soundEffects == null || soundEffects.Length == 0) {
 				soundEffects = EditorUtils.FindAndLoadAssets<SoundEffect>("t:SoundEffect")

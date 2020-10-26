@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Multiplayer (Mirror).unity
+    path: Assets/Multiplayer.unity
     guid: 7d356e4a2c910cb4cbf0fc76d4a09574
+  - enabled: 1
+    path: Assets/Multiplayer - Map 1.unity
+    guid: 4935d42435279af4598156536de0b669
   m_configObjects: {}

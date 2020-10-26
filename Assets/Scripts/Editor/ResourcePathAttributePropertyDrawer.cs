@@ -1,7 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-namespace MT.Packages.LD47
+namespace MT.Packages.LD47.Editor
 {
 	[CustomPropertyDrawer(typeof(ResourcePathAttribute))]
 	public class ResourcePathAttributePropertyDrawer : PropertyDrawer
@@ -11,7 +11,7 @@ namespace MT.Packages.LD47
 		}
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-			var files = Utils.GetResourcesFiles((attribute as ResourcePathAttribute).Extensions);
+			var files = Utils.GetFilesByFolder("Resources", (attribute as ResourcePathAttribute).extensions);
 			files.Insert(0, "-");
 			int index = files.IndexOf(property.stringValue);
 			if (index == -1) {

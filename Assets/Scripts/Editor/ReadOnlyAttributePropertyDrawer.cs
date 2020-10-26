@@ -11,9 +11,10 @@ namespace MT.Packages.LD47.Editor
 		}
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-			GUI.enabled = false;
-			EditorGUI.PropertyField(position, property, label, true);
+			GUI.enabled = (attribute as ReadOnlyAttribute).duringPlayMode && !Application.isPlaying;
+			EditorGUI.PropertyField(position, property, true);
 			GUI.enabled = true;
+
 		}
 	}
 }

@@ -40,12 +40,17 @@ namespace MT.Packages.LD47.Audio
 			return AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
 		}
 
-		public static void UpdateSoundEffects(AudioLibrary audioLibrary) {
-			foreach (var soundEffect in FindAndLoadAssets<SoundEffect>("t:SoundEffect")) {
-				soundEffect.audioLibrary = audioLibrary;
-			}
-			if (audioLibrary.logging) {
-				Debug.Log("Sound Effects updated :)");
+		public static void UpdateSoundEffects(bool ignoreErrors) {
+			var audioLibrary = FindAndLoadAsset<AudioLibrary>("t:AudioLibrary");
+			if (audioLibrary) {
+				foreach (var soundEffect in FindAndLoadAssets<SoundEffect>("t:SoundEffect")) {
+					soundEffect.audioLibrary = audioLibrary;
+				}
+				if (audioLibrary.logging) {
+					Debug.Log("Sound Effects updated :)");
+				}
+			} else if (!ignoreErrors) {
+				Debug.LogError("No Audio Library found :(");
 			}
 		}
 #endif

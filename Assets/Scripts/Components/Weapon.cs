@@ -7,22 +7,26 @@ namespace MT.Packages.LD47
 		[ReadOnly] public Player player;
 
 		public int rank;
-		
-		public Projectile projectile = null;
+		public float ammo = 10;
+		[ReadOnly] public float currentAmmo;
+
+		public ProjectilePool_Object projectile = null;
 		[SerializeField] Audio.SoundEffect shootSoundEffect = null;
         [SerializeField] Transform front = null;
 
 		[SerializeField] bool automatic = false;
-		[SerializeField] float ammo = 10;
 		[SerializeField, Range(0, 3)] float shootInterval = .125f;
         [SerializeField] float restockPerSecond = 1.5f;
 		[SerializeField, Range(0, 3)] float castTime = 0;
 
-		[SerializeField, ResourcePath("prefab")] string fallbackWeapon = null;
+		[SerializeField] Weapon fallbackWeapon = null;
 		
-		[SerializeField, ReadOnly] float currentAmmo;
 		[SerializeField, ReadOnly] float shootTimer;
 		[SerializeField, ReadOnly] float castedTime;
+
+		Timer botShootTimer = (.34f, .68f);
+		Timer botShootHoldTimer = (.3f, 5f);
+		bool botShooting;
 
 		void Awake() {
 			FillAmmo();
@@ -32,33 +36,51 @@ namespace MT.Packages.LD47
 			currentAmmo = ammo;
 		}
 
-		public bool HasFullAmmo() {
-			return currentAmmo == ammo;
-		}
-
 		void Update() {
+			if (player.isServer) {
+				return;
+			}
 			currentAmmo = Mathf.Min(currentAmmo + Time.deltaTime * restockPerSecond, ammo);
 			shootTimer = Mathf.Max(0, shootTimer - Time.deltaTime);
-			if (!string.IsNullOrEmpty(fallbackWeapon) && currentAmmo < 1) {
-				// ownerPlayer.weapon = fallbackWeapon;
+			if (fallbackWeapon && currentAmmo < 1) {
+				player.SetWeapon(fallbackWeapon.name);
 			}
 		}
 
-		public void Shoot(string tag, Vector3 targetPosition) {
-			if (shootTimer == 0 && currentAmmo >= 1) {
-				if (castedTime < castTime) {
-					castedTime += Time.deltaTime;
-				} else {
-					ShootNow(tag, targetPosition);
+		public void UpdateBotShoot(Vector3 targetPosition) {
+			if (automatic) {
+				if (!botShooting && botShootTimer.Update()) {
+					botShooting = true;
+				} else if (botShooting && botShootHoldTimer.Update()) {
+					botShooting = false;
 				}
+				if (botShooting) {
+					Shoot(targetPosition);
+				}
+				return;
+			}
+			if (castTime > 0) {
+				Shoot(targetPosition);
+				return;
+			}
+			if (botShootTimer.Update()) {
+				Shoot(targetPosition);
 			}
 		}
 
-		void ShootNow(string tag, Vector3 targetPosition) {
+		public void Shoot(Vector3 targetPosition) {
+			if (shootTimer > 0 || currentAmmo < 1) {
+				return;
+			}
+			if (castedTime < castTime) {
+				castedTime += Time.deltaTime;
+				return;
+			}
 			castedTime = 0;
 			shootTimer = shootInterval;
 			currentAmmo--;
-			if (FindObjectOfType<ProjectilePool>().Instantiate(tag, front.position, targetPosition)) {
+			var direction = Utils.GetDirection2D(front.position, targetPosition);
+			if (Pool.Get<ProjectilePool>(projectile).Spawn(front.position, direction)) {
 				shootSoundEffect.Play(this, front.position);
 			}
 		}
@@ -78,5 +100,5 @@ namespace MT.Packages.LD47
 		public bool IsCasting() {
 			return castedTime > 0;
 		}
-    }
+	}
 }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace MT.Packages.LD47
 {
@@ -10,7 +11,7 @@ namespace MT.Packages.LD47
 				return;
 			}
 			instance = @this as T;
-			Singleton<MonoBehaviour>.singletons.Add(@this);
+			Singleton<MonoBehaviour>.GetSingletons().Add(@this);
 		}
 
 		public static void UnsetSingletone<T>(this MonoBehaviour @this, ref T instance) where T : MonoBehaviour {
@@ -22,11 +23,12 @@ namespace MT.Packages.LD47
 				Debug.LogWarning("Singleton is not this");
 				return;
 			}
-			if (!Singleton<MonoBehaviour>.singletons.Contains(@this)) {
+			var singletons = Singleton<MonoBehaviour>.GetSingletons();
+			if (!singletons.Contains(@this)) {
 				Debug.LogWarning("Singleton is not listed");
 				return;
 			}
-			Singleton<MonoBehaviour>.singletons.Remove(@this);
+			singletons.Remove(@this);
 			instance = null;
 		}
 
@@ -35,28 +37,57 @@ namespace MT.Packages.LD47
 			return @this;
 		}
 
-		// public static void Send(this TNBehaviour @this, string rfcName, int playerID) {
-		// 	if (@this.tno && !@this.tno.hasBeenDestroyed) {
-		// 		@this.tno.Send(rfcName, playerID);
-		// 	}
-		// }
+		public static bool HasComponent<T>(this Component @this) {
+			return @this.TryGetComponent<T>(out _);
+		}
 
-		// public static void Send(this TNBehaviour @this, string rfcName, Target target) {
-		// 	if (@this.tno && !@this.tno.hasBeenDestroyed) {
-		// 		@this.tno.Send(rfcName, target);
-		// 	}
-		// }
+		public static bool HasAnyComponent<T1, T2>(this Component @this) {
+			return @this.HasComponent<T1>() || @this.HasComponent<T2>();
+		}
 
-		// public static void Send(this TNBehaviour @this, string rfcName, Target target, object obj0) {
-		// 	if (@this.tno && !@this.tno.hasBeenDestroyed) {
-		// 		@this.tno.Send(rfcName, target, obj0);
-		// 	}
-		// }
+		public static bool HasAnyComponent<T1, T2, T3>(this Component @this) {
+			return @this.HasAnyComponent<T1, T2>() || @this.HasComponent<T3>();
+		}
 
-		// public static void Send(this TNBehaviour @this, string rfcName, Target target, object obj0, object obj1) {
-		// 	if (@this.tno && !@this.tno.hasBeenDestroyed) {
-		// 		@this.tno.Send(rfcName, target, obj0, obj1);
+		public static bool HasAnyComponent<T1, T2, T3, T4>(this Component @this) {
+			return @this.HasAnyComponent<T1, T2, T3>() || @this.HasComponent<T4>();
+		}
+
+		static readonly Dictionary<object, bool> logHandles = new Dictionary<object, bool>();
+
+		static void Log(object handle, System.Action callback) {
+			if (!logHandles.ContainsKey(handle)) {
+				logHandles.Add(handle, true);
+			}
+			if (logHandles[handle]) {
+				callback();
+			}
+		}
+
+		public static void Logging(this object handle, bool enabled) {
+			logHandles[handle] = enabled;
+		}
+
+		public static void Log(this object handle, object message) {
+			Log(handle, () => Debug.Log(message));
+		}
+
+		public static void LogWarning(this object handle, object message) {
+			Log(handle, () => Debug.LogWarning(message));
+		}
+
+		public static void LogError(this object handle, object message) {
+			Log(handle, () => Debug.LogError(message));
+		}
+
+		// --- Not longer needed ---
+		// public static bool IsMine(this Component @this) {
+		// 	if (@this.TryGetComponent<Mirror.NetworkIdentity>(out var identity)) {
+		// 		if (Utils.IsMine(identity.netId)) {
+		// 			return true;
+		// 		}
 		// 	}
+		// 	return false;
 		// }
 	}
 }

@@ -47,16 +47,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 0}
   rank: 0
+  ammo: 10
+  currentAmmo: 0
   projectile: {fileID: 8473372537364280046, guid: 4acb21dea328839448e65c67bd1dcacc, type: 3}
   shootSoundEffect: {fileID: 11400000, guid: 79a51364f3e8b2e4fa87e5e6f6c5bcd4, type: 2}
   front: {fileID: 5143329283023558470}
   automatic: 0
-  ammo: 10
   shootInterval: 0.125
   restockPerSecond: 1.5
   castTime: 0
   fallbackWeapon: 
-  currentAmmo: 0
   shootTimer: 0
   castedTime: 0
 --- !u!1 &5143329283023558469

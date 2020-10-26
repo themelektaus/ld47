@@ -12,7 +12,7 @@ namespace MT.Packages.LD47
 			if (activated) {
 				return;
 			}
-			if (collision.TryGetComponent<Projectile>(out _)) {
+			if (collision.TryGetComponent<ProjectilePool_Object>(out _)) {
 				return;
 			}
 			if (collision.GetComponentInParent<PlayerController>()) {

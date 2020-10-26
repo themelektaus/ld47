@@ -6,14 +6,14 @@ namespace MT.Packages.LD47
 {
 	public class Attractor : MonoBehaviour
 	{
-		public enum State
+		public enum Mode
 		{
 			Normal,
 			Kinematic,
 			Frozen
 		}
+		public Mode mode = Mode.Normal;
 
-		public State state = State.Normal;
 		public float localVelocityX;
 		public Vector2 kinematicMovement;
 
@@ -33,7 +33,7 @@ namespace MT.Packages.LD47
 
 		public float velocityY {
 			set {
-				if (state == State.Normal) {
+				if (mode == Mode.Normal) {
 					velocity.y = value;
 				}
 			}
@@ -63,8 +63,8 @@ namespace MT.Packages.LD47
 				body.SetRotation(0);
 			}
 
-			switch (state) {
-				case State.Normal:
+			switch (mode) {
+				case Mode.Normal:
 					Vector2 localVelocity = body.transform.InverseTransformDirection(body.velocity);
 					localVelocity.y += velocity.y;
 					float factor = gravitation ? -Mathf.Abs(gravitation.gravityFactor) : -2;
@@ -78,16 +78,21 @@ namespace MT.Packages.LD47
 					velocity.y = 0;
 					break;
 
-				case State.Kinematic:
+				case Mode.Kinematic:
 					body.velocity = Vector2.SmoothDamp(body.velocity, kinematicMovement, ref velocity, velocitySmoothTimes.x);
+					break;
+
+				case Mode.Frozen:
 					break;
 			}
 		}
 
 		public void ResetVelocityY() {
-			Vector2 localVelocity = body.transform.InverseTransformDirection(body.velocity);
-			localVelocity.y = 0;
-			body.velocity = body.transform.TransformDirection(localVelocity);
+			if (body.bodyType != RigidbodyType2D.Static) {
+				Vector2 localVelocity = body.transform.InverseTransformDirection(body.velocity);
+				localVelocity.y = 0;
+				body.velocity = body.transform.TransformDirection(localVelocity);
+			}
 		}
 	}
 }

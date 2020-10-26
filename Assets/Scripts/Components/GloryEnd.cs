@@ -8,7 +8,7 @@ namespace MT.Packages.LD47
 		[SerializeField] CanvasGroup canvasGroup = null;
 
 		void OnTriggerEnter2D(Collider2D collision) {
-			if (collision.TryGetComponent<Projectile>(out _)) {
+			if (collision.TryGetComponent<ProjectilePool_Object>(out _)) {
 				return;
 			}
 			if (collision.GetComponentInParent<PlayerController>()) {

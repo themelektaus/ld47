@@ -1,34 +1,48 @@
-﻿using UnityEngine;
+﻿using Mirror;
+using UnityEngine;
 
 namespace MT.Packages.LD47
 {
-    public class CollectableWeapon : Mirror.NetworkBehaviour
-    {
-        [SerializeField, ResourcePath("prefab")] string weapon = null;
+	public class CollectableWeapon : NetworkBehaviour
+	{
+		[SerializeField, SyncVar] bool active = true;
+		[SerializeField, ResourcePath("prefab")] string weaponName = null;
+		int rank;
+		float ammo;
 
-		Weapon weaponInstance;
+		[SerializeField] SpriteRenderer sprite = null;
+		[SerializeField, Range(1, 60)] float respawnDelay = 20;
 
-		// protected override void Awake() {
-		// 	base.Awake();
-		// 	weaponInstance = Resources.Load<Weapon>(weapon);
-		// }
+		float respawnTimer;
 
-		[Mirror.ServerCallback]
+		public override void OnStartServer() {
+			base.OnStartServer();
+			var weapon = Resources.Load<Weapon>(weaponName);
+			rank = weapon.rank;
+			ammo = weapon.ammo;
+		}
+
+		void Update() {
+			sprite.enabled = active;
+			if (!isServer) {
+				return;
+			}
+			if (active) {
+				respawnTimer = 0;
+				return;
+			}
+			respawnTimer = Mathf.Max(0, respawnTimer - Time.deltaTime);
+			if (respawnTimer == 0) {
+				active = true;
+			}
+		}
+
+		[ServerCallback]
 		void OnTriggerStay2D(Collider2D collision) {
-			if (collision.TryGetComponent<Player>(out var player)) {
-				if (/* player.tno.isMine && */ !player.IsDead()) {
-					if (player.weaponInstance.rank > weaponInstance.rank) {
-						return;
-					}
-					if (player.weapon == weapon) {
-						if (player.weaponInstance.HasFullAmmo()) {
-							return;
-						}
-						player.weaponInstance.FillAmmo();
-					} else {
-						player.weapon = weapon;
-					}
-					// gameObject.DestroySelf();
+			if (active && collision.TryGetComponent<Player>(out var player)) {
+				if (player.TryTakeWeapon(weaponName, rank, ammo)) {
+					respawnTimer = respawnDelay;
+					active = false;
 				}
 			}
 		}

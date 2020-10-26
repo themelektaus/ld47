@@ -17,8 +17,8 @@ namespace MT.Packages.LD47
         float time;
         Vector3 velocity;
 
-		protected override void OnAwake() {
-            base.OnAwake();
+		protected override void Awake() {
+            base.Awake();
             z = transform.localPosition.z;
         }
 

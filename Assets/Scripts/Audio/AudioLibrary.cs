@@ -48,24 +48,15 @@ namespace MT.Packages.LD47.Audio
 		}
 		static void EditorApplication_playModeStateChanged(PlayModeStateChange state) {
 			if (state == PlayModeStateChange.EnteredPlayMode) {
-				var audioLibrary = Utils.FindAndLoadAsset<AudioLibrary>("t:AudioLibrary");
-				if (audioLibrary) {
-					Utils.UpdateSoundEffects(audioLibrary);
-				}
+				Utils.UpdateSoundEffects(true);
 			}
 		}
 	}
-#endif
-
-#if UNITY_EDITOR
 	class AudioLibraryBuildProcessor : IPreprocessBuildWithReport
 	{
 		public int callbackOrder => 0;
 		public void OnPreprocessBuild(BuildReport report) {
-			var audioLibrary = Utils.FindAndLoadAsset<AudioLibrary>("t:AudioLibrary");
-			if (audioLibrary) {
-				Utils.UpdateSoundEffects(audioLibrary);
-			}
+			Utils.UpdateSoundEffects(true);
 		}
 	}
 #endif

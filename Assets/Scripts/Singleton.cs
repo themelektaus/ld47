@@ -5,29 +5,35 @@ namespace MT.Packages.LD47
 {
     public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
-		public static List<MonoBehaviour> singletons = new List<MonoBehaviour>();
+		static List<MonoBehaviour> singletons;
 
-        static T _instance;
+		public static List<MonoBehaviour> GetSingletons() {
+			if (singletons == null) {
+				singletons = new List<MonoBehaviour>();
+			} else {
+				singletons.RemoveAll(x => !x);
+			}
+			return singletons;
+		}
+
+		static T _instance;
 
 		public static T instance {
 			get {
 				if (!_instance) {
-					_instance = Utils.CreateInstance<T>();
+					var gameObject = new GameObject();
+					_instance = gameObject.AddComponent<T>();
+					gameObject.name = _instance.ToString();
 				}
 				return _instance;
 			}
 		}
 
-		void Awake() {
+		protected virtual void Awake() {
 			this.SetSingleton(ref _instance);
-			OnAwake();
 		}
 
-		protected virtual void OnAwake() {
-
-		}
-
-		void OnDestroy() {
+		protected virtual void OnDestroy() {
 			this.UnsetSingletone(ref _instance);
 		}
 	}

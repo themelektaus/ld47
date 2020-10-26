@@ -8,30 +8,32 @@ namespace MT.Packages.LD47
 
 		public Vector2 interval { get; private set; } = Vector2.zero;
 
-		readonly bool updateOnStart;
+		float time;
 
-		float? time;
+		public static implicit operator Timer(float interval) {
+			return new Timer(interval);
+		}
+
+		public static implicit operator Timer((float minInterval, float maxInterval) value) {
+			return new Timer(value.minInterval, value.maxInterval);
+		}
 
 		public Timer(float interval) : this(interval, interval) { }
-		public Timer(float minInterval, float maxInterval) : this(minInterval, maxInterval, false) { }
-		public Timer(float interval, bool updateOnStart) : this(interval, interval, updateOnStart) {		}
-		public Timer(float minInterval, float maxInterval, bool updateOnStart) {
+
+		public Timer(float minInterval, float maxInterval) {
 			interval = new Vector2(minInterval, maxInterval);
-			this.updateOnStart = updateOnStart;
+			Reset();
 		}
 
 		public static implicit operator bool(Timer timer) {
 			return timer != null;
 		}
 
+		public void Reset() {
+			time = 0;
+		}
+
 		public bool Update() {
-			if (!time.HasValue) {
-				if (updateOnStart) {
-					time = 0;
-				} else {
-					time = GetInterval();
-				}
-			}
 			bool result = false;
 			if (time <= 0) {
 				time += GetInterval();
@@ -43,7 +45,7 @@ namespace MT.Packages.LD47
 
 		float GetInterval() {
 			if (interval.y > interval.x) {
-				return Random.Range(interval.x, interval.y);
+				return UnityEngine.Random.Range(interval.x, interval.y);
 			}
 			return interval.x;
 		}

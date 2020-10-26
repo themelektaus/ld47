@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+﻿using Mirror;
+using System.Collections;
+using UnityEngine;
 
 namespace MT.Packages.LD47
 {
 	[RequireComponent(typeof(Attractor))]
-	public class BatEnemy : Mirror.NetworkBehaviour, IHostile
+	public class BatEnemy : NetworkBehaviour, IHostile
 	{
 		public enum State
 		{
@@ -19,19 +21,17 @@ namespace MT.Packages.LD47
 		[SerializeField] float idleMoveSpeed = .5f;
 		[SerializeField] float attackMoveSpeed = 7.5f;
 
-		[SerializeField] Projectile projectilePrefab = null;
+		[SerializeField] ProjectilePool_Object projectilePrefab = null;
 		[SerializeField] float projectileInterval = 0.5f;
 		[SerializeField] GameObject hitEffect = null;
 		[SerializeField] Audio.SoundEffect hitSoundEffect = null;
 
 		[SerializeField] State state = State.Idle;
 
-		Attractor attractor;
-		Timer timer;
-		float currentHealth;
 		Animator animator;
 
-		SmoothVector3 position;
+		Attractor attractor;
+		float currentHealth;
 		Vector2 startPosition;
 		Vector2 randomPosition;
 
@@ -39,30 +39,37 @@ namespace MT.Packages.LD47
 		float alternativeAttackTime;
 		Vector2 alternativeAttackDirection;
 
+		[SyncVar] public bool dead;
+
+		public override void OnStartClient() {
+			base.OnStartClient();
+			animator = GetComponentInChildren<Animator>();
+		}
+
 		public override void OnStartServer() {
 			base.OnStartServer();
 			attractor = GetComponent<Attractor>();
-			timer = new Timer(.4f);
-			animator = GetComponentInChildren<Animator>();
 			currentHealth = health;
 			startPosition = transform.position;
 			randomPosition = GetRandomPosition();
-			position = new SmoothVector3(() => transform.position, x => transform.position = x, .5f);
 		}
 
 		Vector2 GetRandomPosition() {
 			return startPosition + Random.insideUnitCircle * homeRadius;
 		}
 
-		[Mirror.ServerCallback]
 		void Update() {
-			if (IsDead()) {
-				attractor.state = Attractor.State.Frozen;
+			if (isClient) {
+				animator.SetBool("Dead", dead);
+				return;
+			}
+			if (dead) {
+				attractor.mode = Attractor.Mode.Frozen;
 				return;
 			} else {
-				attractor.state = Attractor.State.Kinematic;
+				attractor.mode = Attractor.Mode.Kinematic;
 			}
-			var player = Player.GetClosestPlayer(transform.position);
+			var player = NetworkManager.GetClosestPlayer(transform.position);
 			if (!player) {
 				if (state != State.Idle) {
 					state = State.Idle;
@@ -74,9 +81,8 @@ namespace MT.Packages.LD47
 				if (projectileTime > 0) {
 					projectileTime -= Time.deltaTime;
 				} else {
-					// if (NetworkPool.TryGet<Projectile, ProjectilePool>(projectilePrefab, out var pool)) {
-					// 	pool.Instantiate(tag, transform.position, player.sweetspot.position);
-					// }
+					var direction = Utils.GetDirection2D(transform.position, player.sweetspot.position);
+					Pool.Get<ProjectilePool>(projectilePrefab).Spawn(transform.position, direction);
 					projectileTime += projectileInterval;
 				}
 			} else if (aggroAggression && Vector2.Distance(transform.position, player.sweetspot.position) <= aggroRadius) {
@@ -84,9 +90,9 @@ namespace MT.Packages.LD47
 			}
 		}
 
-		[Mirror.ServerCallback]
+		[ServerCallback]
 		void FixedUpdate() {
-			if (IsDead()) {
+			if (dead) {
 				return;
 			}
 			Vector2 direction;
@@ -99,7 +105,7 @@ namespace MT.Packages.LD47
 					}
 					break;
 				case State.Attack:
-					var player = Player.GetClosestPlayer(transform.position);
+					var player = NetworkManager.GetClosestPlayer(transform.position);
 					if (!player) {
 						break;
 					}
@@ -118,59 +124,59 @@ namespace MT.Packages.LD47
 			}
 		}
 
-		public bool IsDead() {
-			return animator.GetBool("Dead");
-		}
-
-		public void SetDead() {
-			if (IsDead()) {
+		public void ReceiveDamage(uint senderID, float damage) {
+			if (isServer) {
+				TakeDamageData(damage);
+				RPC_TakeDamageFX(0);
+				if (Utils.TryGetConnection(senderID, out var connection)) {
+					TargetRPC_CameraShake(connection);
+				}
 				return;
 			}
-			animator.SetBool("Dead", true);
+			TakeDamage(senderID, damage);
+			TakeDamageFX();
+			CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
 		}
 
-		public void ReceiveDamage(string senderTag, float damage) {
-			if (damage == 0) {
-				return;
+		[TargetRpc]
+		void TargetRPC_CameraShake(NetworkConnection target) {
+			this.Log("[TargetRpc] TargetRPC_CameraShake(...)");
+			CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
+		}
+
+		[Command(ignoreAuthority = true)]
+		void TakeDamage(uint senderID, float damage) {
+			TakeDamageData(damage);
+			RPC_TakeDamageFX(senderID);
+		}
+
+		void TakeDamageData(float damage) {
+			state = State.Attack;
+			currentHealth -= damage;
+			if (currentHealth <= 0) {
+				dead = true;
+				StartCoroutine(DestroyRoutine());
 			}
-			// this.Send(nameof(RFC_TakeDamage), Target.Host, damage);
-			// this.Send(nameof(RFC_TakeDamageFX), Target.All);
-			// this.Send(nameof(RFC_TakeDamageSound), senderID);
 		}
 
-		// [RFC]
-		// void RFC_UpdateRemoteData(Vector3 targetPosition, float currentHealth) {
-		// 	if (!position) {
-		// 		return;
-		// 	}
-		// 	position.target = targetPosition;
-		// 	this.currentHealth = currentHealth;
-		// 	if (currentHealth <= 0) {
-		// 		SetDead();
-		// 	}
-		// }
+		void TakeDamageFX() {
+			hitSoundEffect.Play(this);
+			Instantiate(hitEffect)
+				.ToTempInstance()
+				.transform.position = transform.position;
+		}
 
-		// [RFC]
-		// void RFC_TakeDamage(float damage) {
-		// 	state = State.Attack;
-		// 	currentHealth -= damage;
-		// 	if (currentHealth <= 0) {
-		// 		SetDead();
-		// 		gameObject.DestroySelf(1);
-		// 	}
-		// }
+		[ClientRpc]
+		void RPC_TakeDamageFX(uint senderID) {
+			if (!Utils.IsMine(senderID)) {
+				TakeDamageFX();
+			}
+		}
 
-		// [RFC]
-		// void RFC_TakeDamageFX() {
-		// 	var effect = Instantiate(hitEffect).ToTempInstance();
-		// 	effect.transform.position = transform.position;
-		// }
-
-		// [RFC]
-		// void RFC_TakeDamageSound() {
-		// 	hitSoundEffect.Play(this);
-		// 	CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
-		// }
+		IEnumerator DestroyRoutine() {
+			yield return new WaitForSeconds(1);
+			NetworkServer.Destroy(gameObject);
+		}
 
 		void OnDrawGizmosSelected() {
 			Gizmos.color = Color.red;

@@ -45,18 +45,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f96f181ac1af2af4d954126ea6669321, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  owner: {fileID: 0}
+  player: {fileID: 0}
   rank: 1
-  projectilePrefab: {fileID: 8473372537364280046, guid: 784fc03f019bfe8498ca461b6a6cfee5, type: 3}
+  ammo: 3
+  currentAmmo: 0
+  projectile: {fileID: 8473372537364280046, guid: 784fc03f019bfe8498ca461b6a6cfee5, type: 3}
   shootSoundEffect: {fileID: 11400000, guid: 79a51364f3e8b2e4fa87e5e6f6c5bcd4, type: 2}
   front: {fileID: 5143329283023558470}
   automatic: 0
-  ammo: 3
   shootInterval: 0
   restockPerSecond: 0
   castTime: 1
-  fallbackWeapon: Starter Gun
-  currentAmmo: 0
+  fallbackWeapon: {fileID: 760524978847287172, guid: ca6e546edf8d1c745b00289c4b4836a7, type: 3}
   shootTimer: 0
   castedTime: 0
 --- !u!1 &5143329283023558469

@@ -1,22 +1,15 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 #if UNITY_EDITOR
 using System.IO;
-using UnityEditor;
 #endif
 
 namespace MT.Packages.LD47
 {
 	public static class Utils
 	{
-		public static T CreateInstance<T>() where T : MonoBehaviour {
-			var gameObject = new GameObject();
-			var result = gameObject.AddComponent<T>();
-			gameObject.name = result.ToString();
-			return result;
-		}
-
 		public static void ConvertToTempInstance(GameObject gameObject) {
 			gameObject.transform.parent = TempInstances.instance.transform;
 		}
@@ -30,46 +23,87 @@ namespace MT.Packages.LD47
 		}
 
 		public static float GetAngle2D(Vector2 a, Vector2 b) {
-			var p = a - b;
-			return Mathf.Atan2(p.y, p.x) * Mathf.Rad2Deg + 90;
+			return Mathf.Atan2(a.y - b.y, a.x - b.x) * Mathf.Rad2Deg + 90;
 		}
 
-		public static GameObject Instantiate(int channelID, string localPrefabName, System.Func<GameObject, GameObject> localFunc) {
-			if (channelID == 0) {
-				return null;
+		public static bool TryGetMyID(out uint id) {
+			id = 0;
+			if (Mirror.NetworkServer.active) {
+				return true;
 			}
-			return localFunc(Resources.Load<GameObject>(localPrefabName));
+			if (Mirror.NetworkClient.active && Mirror.NetworkClient.connection.identity) {
+				id = Mirror.NetworkClient.connection.identity.netId;
+				return true;
+			}
+			return false;
+		}
+
+		public static bool IsMine(uint id) {
+			return TryGetMyID(out var myID) && myID == id;
+		}
+
+		public static bool TryGetConnection(uint netId, out Mirror.NetworkConnectionToClient connection) {
+			var connections = Mirror.NetworkServer.connections.Values;
+			foreach (var _connection in connections.Where(x => x.identity && x.identity.netId == netId)) {
+				connection = _connection;
+				return true;
+			}
+			connection = null;
+			return false;
 		}
 
 #if UNITY_EDITOR
-		public static List<string> GetResourcesFiles(params string[] extensions) {
-			List<string> result = new List<string>();
-			foreach (var folder in GetResourcesFolders()) {
+
+		struct ResourcesFilesInfo
+		{
+			public List<string> filelist;
+			public System.DateTime timestamp;
+		}
+		static readonly Dictionary<string, ResourcesFilesInfo> resourcesFilesInfos = new Dictionary<string, ResourcesFilesInfo>();
+
+		public static List<string> GetFilesByFolder(string folderName, params string[] extensions) {
+			var key = folderName + "|" + string.Join(" | ", extensions);
+			if (resourcesFilesInfos.ContainsKey(key)) {
+				if ((System.DateTime.Now - resourcesFilesInfos[key].timestamp).TotalSeconds < 5) {
+					return resourcesFilesInfos[key].filelist.ToList();
+				}
+				var info = resourcesFilesInfos[key];
+				info.filelist.Clear();
+				info.timestamp = System.DateTime.Now;
+				resourcesFilesInfos[key] = info;
+			} else {
+				resourcesFilesInfos[key] = new ResourcesFilesInfo {
+					filelist = new List<string>(),
+					timestamp = System.DateTime.Now
+				};
+			}
+			var filelist = resourcesFilesInfos[key].filelist;
+			foreach (var folder in GetFoldersByName(folderName)) {
 				foreach (var file in Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories)) {
 					string filename = file.Substring(folder.Length + 1);
 					foreach (var extension in extensions) {
 						var ext = "." + extension.ToLower();
 						if (filename.ToLower().EndsWith(ext)) {
-							result.Add(filename.Substring(0, filename.Length - ext.Length));
+							filelist.Add(filename.Substring(0, filename.Length - ext.Length));
 							break;
 						}
 					}
 				}
 			}
-			return result;
+			return filelist.ToList();
 		}
 
-		static List<string> GetResourcesFolders() {
+		static List<string> GetFoldersByName(string name) {
 			List<string> result = new List<string>();
 			Stack<string> stack = new Stack<string>();
 			stack.Push(Application.dataPath);
 			while (stack.Count > 0) {
-				string currentDir = stack.Pop();
-				foreach (string dir in Directory.GetDirectories(currentDir)) {
-					if (Path.GetFileName(dir).Equals("Resources")) {
-						result.Add(dir);
+				string path = stack.Pop();
+				foreach (string folder in Directory.GetDirectories(path)) {
+					if (Path.GetFileName(folder).Equals(name)) {
+						result.Add(folder);
 					}
-					stack.Push(dir);
+					stack.Push(folder);
 				}
 			}
 			return result;

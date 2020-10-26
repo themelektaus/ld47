@@ -1,55 +1,45 @@
 ﻿using UnityEngine;
-using System.Linq;
 using E = UnityEngine.Events;
-using G = System.Collections.Generic;
 using Mirror;
 
 namespace MT.Packages.LD47
 {
 	public class Player : NetworkBehaviour, IHostile
 	{
-		public static G.List<Player> players = new G.List<Player>();
+		[SerializeField] bool logging = false;
 
-		public static Player GetClosestPlayer(Vector2 position) {
-			return players
-				.Where(x => !x.IsDead() && x.isActiveAndEnabled)
-				.Select(player => {
-					float distance = Vector2.Distance(position, player.transform.position);
-					return (player, distance);
-				})
-				.OrderBy(x => x.distance)
-				.FirstOrDefault()
-				.player;
-		}
-
+		[ReadOnly, SyncVar(hook = nameof(SetInGame))] bool inGame = true;
+		
 		[Range(-1, 1)] public float inputHorizontal;
 		public bool inputJump;
 		public bool inputJumpHold;
-		public bool flipped;
 		public Transform sweetspot;
 
 		[HideInInspector] public E.UnityEvent<float> onReceiveDamage = new E.UnityEvent<float>();
 
 		[ReadOnly] public Attractor attractor;
-		[ReadOnly, SyncVar] public float currentHealth;
 
-		[ResourcePath("prefab")] public string weapon = null;
-		public Audio.SoundEffect hitSoundEffect = null;
-		public float health = 10;
+		[ResourcePath("prefab"), SyncVar] public string weaponName = null;
+
+		[SerializeField] Audio.SoundEffect hitSoundEffect = null;
+		[SerializeField] float maxHealth = 10;
+		[SerializeField, ReadOnly, SyncVar] float currentHealth;
 
 		[SerializeField] GameObject hitEffect = null;
-		
+
 		[SerializeField] Animator animator = null;
 		[SerializeField] Transform neck = null;
 		[SerializeField] Transform hand = null;
-		
+
 		[SerializeField] float moveSpeed = 13;
 		[SerializeField] float jumpForce = 4.2f;
 		[SerializeField] AnimationCurve jumpCurve = new AnimationCurve();
 		[SerializeField] float jumpCurveDuration = .3f;
 		[SerializeField, Range(0, 1)] float airJumpForgiveness = .4f;
 
-		[SyncVar] public Vector3 trackingPosition;
+		readonly Timer appereanceTimer = .2f;
+		public SmoothVector3 trackingPosition;
+		[SyncVar] public bool flipped;
 
 		bool jumping;
 		float jumpTime;
@@ -58,62 +48,92 @@ namespace MT.Packages.LD47
 
 		[ReadOnly] public Weapon weaponInstance;
 
+		public bool isDead { get { return currentHealth == 0; } }
+		public bool isInGameAndAlive { get { return inGame && !isDead; } }
+
 		void Awake() {
+			this.Logging(logging);
 			attractor = GetComponent<Attractor>();
+			trackingPosition = new SmoothVector3(transform.position + Vector3.right * 3, .2f);
 		}
 
 		public override void OnStartServer() {
 			base.OnStartServer();
-			players.Add(this);
+			SetInGame(inGame, false);
+			NetworkManager.RegisterPlayer(this);
 		}
 
 		public override void OnStartClient() {
 			base.OnStartClient();
 			if (isLocalPlayer) {
-				attractor.state = Attractor.State.Normal;
-				trackingPosition = transform.position + Vector3.right * 3;
-				currentHealth = health;
 				gameObject.AddComponent<PlayerController>();
-				if (Camera.main.TryGetComponent<SimpleInterpolation>(out var interpolation)) {
-					interpolation.target = gameObject.transform;
-				}
 			}
 		}
 
-		public void SetDead() {
-			if (IsDead()) {
-				return;
-			}
-			animator.SetBool("Dead", true);
-		}
-
+		[ServerCallback]
 		void OnDestroy() {
-			players.Remove(this);
+			NetworkManager.UnregisterPlayer(this);
+		}
+
+		[Command]
+		public void Command_SetInGame(bool inGame) {
+			SetInGame(this.inGame, inGame);
+		}
+
+		void SetInGame(bool _, bool newValue) {
+			inGame = newValue;
+			animator.gameObject.SetActive(newValue);
+			GetComponent<CapsuleCollider2D>().enabled = newValue;
+			if (newValue) {
+				GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Dynamic;
+				attractor.mode = isLocalPlayer ? Attractor.Mode.Normal : Attractor.Mode.Kinematic;
+			} else {
+				GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Static;
+				attractor.mode = Attractor.Mode.Frozen;
+			}
 		}
 
 		void Update() {
-			if (IsDead()) {
-				attractor.localVelocityX = 0;
-				trackingPosition = transform.position + Vector3.right;
+			if (isLocalPlayer) {
+				if (isInGameAndAlive) {
+					UpdateInput();
+					if (appereanceTimer.Update()) {
+						SetAppearance(
+							trackingPosition.current,
+							flipped,
+							animator.GetFloat("Move") != 0,
+							weaponInstance ? weaponInstance.currentAmmo : 0
+						);
+					}
+				} else {
+					attractor.localVelocityX = 0;
+					trackingPosition.value = transform.position + Vector3.right;
+				}
 			} else {
-				UpdateWeapon();
-				UpdateInput();
-				UpdateFlip();
-				UpdateBodyTracking();
+				trackingPosition.Update();
 			}
+			if (isDead) {
+				jumping = false;
+				animator.SetBool("Dead", true);
+				return;
+			}
+			animator.SetBool("Dead", false);
+			UpdateWeapon();
+			UpdateFlip();
+			UpdateBodyTracking();
 		}
 
 		void UpdateWeapon() {
-			if (string.IsNullOrEmpty(weapon) && weaponInstance) {
+			if (string.IsNullOrEmpty(weaponName) && weaponInstance) {
 				Destroy(weaponInstance.gameObject);
 				weaponInstance = null;
-			} else if ((!string.IsNullOrEmpty(weapon) && !weaponInstance) || (weaponInstance && weapon != weaponInstance.name)) {
+			} else if (!string.IsNullOrEmpty(weaponName) && (!weaponInstance || (weaponName != weaponInstance.name))) {
 				if (weaponInstance) {
 					Destroy(weaponInstance.gameObject);
 					weaponInstance = null;
 				}
-				weaponInstance = Instantiate(Resources.Load<Weapon>(weapon), hand.GetChild(0));
-				weaponInstance.name = weapon;
+				weaponInstance = Instantiate(Resources.Load<Weapon>(weaponName), hand.GetChild(0));
+				weaponInstance.name = weaponName;
 				weaponInstance.transform.localEulerAngles = new Vector3(0, 0, -90);
 				weaponInstance.player = this;
 			}
@@ -152,7 +172,7 @@ namespace MT.Packages.LD47
 		}
 
 		void UpdateBodyTracking() {
-			var angle = Utils.GetAngle2D(hand.position, trackingPosition);
+			var angle = Utils.GetAngle2D(hand.position, trackingPosition.current);
 			if (animator.transform.localScale.x < 0) {
 				neck.eulerAngles = new Vector3(0, 0, angle - 90);
 				hand.eulerAngles = new Vector3(0, 0, angle - 180);
@@ -167,6 +187,7 @@ namespace MT.Packages.LD47
 			neck.localEulerAngles = eulerAngles;
 		}
 
+		[ClientCallback]
 		void FixedUpdate() {
 			if (!isLocalPlayer) {
 				return;
@@ -176,49 +197,136 @@ namespace MT.Packages.LD47
 			}
 		}
 
-		public bool IsDead() {
-			return animator.GetBool("Dead");
+		public void Shoot(Vector2 targetPosition) {
+			if (weaponInstance && isInGameAndAlive) {
+				weaponInstance.Shoot(targetPosition);
+			}
 		}
 
-		public void ReceiveDamage(string senderTag, float damage) {
-			if (damage == 0) {
+		public void UpdateBotShoot(Vector2 targetPosition) {
+			if (weaponInstance && isInGameAndAlive) {
+				weaponInstance.UpdateBotShoot(targetPosition);
+			}
+		}
+
+		public void ReceiveDamage(uint senderID, float damage) {
+			if (senderID > 0) {
+				Command_TakeDamage(senderID, damage);
 				return;
 			}
-			// this.Send(nameof(RFC_TakeDamage), Target.All, damage);
-			// if (CompareTag(senderTag) && tno.ownerID != senderID) {
-			// 	this.Send(nameof(RFC_TakeDamageSound), senderID);
-			// }
+			RPC_TakeDamage(senderID, damage);
 		}
 
-		public void Shoot(Vector2 targetPosition) {
-			if (!IsDead() && weaponInstance) {
-				weaponInstance.Shoot(tag, targetPosition);
+		[Command(ignoreAuthority = true)]
+		void Command_TakeDamage(uint senderID, float damage) {
+			this.Log($"[Command(ignoreAuthority = true)] Command_TakeDamage({senderID}, {damage})");
+			RPC_TakeDamage(senderID, damage);
+		}
+
+		[ClientRpc]
+		void RPC_TakeDamage(uint senderID, float damage) {
+			this.Log($"[ClientRpc] RPC_TakeDamage({senderID}, {damage})");
+			TakeDamage(senderID, damage);
+		}
+
+		void TakeDamage(uint senderID, float damage) {
+			var effect = Instantiate(hitEffect).ToTempInstance();
+			effect.transform.position = attractor.body.worldCenterOfMass;
+			onReceiveDamage.Invoke(damage);
+			hitSoundEffect.Play(this);
+			if (Utils.IsMine(senderID)) {
+				CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
 			}
 		}
 
-		// [RFC]
-		// void RFC_UpdateRemoteData(RemoteData data) {
-		// 	transformPosition.target = data.targetPosition;
-		// 	trackingPosition.target = data.targetTrackingPosition;
-		// 	flipped = data.flipped;
-		// 	inputHorizontal = data.inputHorizontal;
-		// 	weapon = data.weapon;
-		// 	if (data.dead) {
-		// 		SetDead();
-		// 	}
-		// }
+		[Command]
+		public void Command_Heal() {
+			this.Log($"[Command] Command_Heal()");
+			Heal();
+		}
 
-		// [RFC]
-		// void RFC_TakeDamage(float damage) {
-		// 	var effect = Instantiate(hitEffect).ToTempInstance();
-		// 	effect.transform.position = attractor.body.worldCenterOfMass;
-		// 	onReceiveDamage.Invoke(damage);
-		// }
+		public void Heal() {
+			currentHealth = maxHealth;
+		}
 
-		// [RFC]
-		// void RFC_TakeDamageSound() {
-		// 	hitSoundEffect.Play(this);
-		// 	CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
-		// }
+		[Command]
+		public void Kill() {
+			this.Log($"[Command] Kill()");
+			currentHealth = 0;
+		}
+
+		[Command]
+		public void ChangeHealth(float delta) {
+			this.Log($"[Command] ChangeHealth({delta})");
+			currentHealth = Mathf.Clamp(currentHealth + delta, 0, maxHealth);
+		}
+
+		[Command]
+		public void SetWeapon(string weaponName) {
+			this.Log($"[Command] SetWeapon(\"{weaponName}\")");
+			this.weaponName = weaponName;
+		}
+
+		[Command]
+		void SetAppearance(Vector3 trackingPosition, bool flipped, bool moving, float currentAmmo) {
+			this.flipped = flipped;
+			if (weaponInstance) {
+				weaponInstance.currentAmmo = currentAmmo;
+			}
+			RPC_GetAppearance(trackingPosition, moving);
+		}
+
+		[ClientRpc(excludeOwner = true)]
+		void RPC_GetAppearance(Vector3 trackingPosition, bool moving) {
+			// this.Log($"[ClientRpc(excludeOwner = true)] RPC_GetAppearance(...)");
+			this.trackingPosition.target = trackingPosition;
+			attractor.localVelocityX = moving ? 1 : 0;
+		}
+
+		[Server]
+		public bool TryTakeWeapon(string weaponName, int weaponRank, float weaponAmmo) {
+			this.Log($"[Server] TakeWeapon(\"{weaponName}\", {weaponRank}, {weaponAmmo})");
+			if (!isInGameAndAlive) {
+				this.Log("!isInGameAndAlive ... => false");
+				return false;
+			}
+			if (this.weaponName != weaponName) {
+				this.Log("this.weaponName != weaponName ... => true");
+				this.weaponName = weaponName;
+				return true;
+			}
+			if (!weaponInstance) {
+				this.Log("!weaponInstance ... => false");
+				return false;
+			}
+			if (weaponInstance.rank > weaponRank) {
+				this.Log("weaponInstance.rank > weaponRank ... => false");
+				return false;
+			}
+			if (weaponInstance.currentAmmo < weaponAmmo) {
+				this.Log("weaponInstance.currentAmmo < weaponAmmo ... => true");
+				TargetRPC_FillAmmo();
+				return true;
+			}
+			this.Log($"[Server] TakeWeapon(...) => false");
+			return false;
+		}
+
+		[TargetRpc]
+		void TargetRPC_FillAmmo() {
+			this.Log($"[TargetRpc] TargetRPC_FillAmmo()");
+			weaponInstance.FillAmmo();
+		}
+
+		[Client]
+		public void Respawn() {
+			if (isDead) {
+				Heal();
+				Command_Heal();
+				Command_SetInGame(true);
+			} else {
+				Debug.LogError("Respawning not possible because you're not dead yet :)");
+			}
+		}
 	}
 }

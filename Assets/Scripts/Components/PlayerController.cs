@@ -1,65 +1,138 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 namespace MT.Packages.LD47
 {
 	[RequireComponent(typeof(Player))]
 	public class PlayerController : MonoBehaviour
 	{
-		[HideInInspector] public Player player;
+		public static PlayerController instance;
 
-#if UNITY_EDITOR
-		public bool bot = false;
-#else
-		public bool bot = true;
-#endif
+		[ReadOnly] public Player player;
+
+		public enum Mode
+		{
+			Spectator,
+			InGameClientBot,
+			InGamePlayer
+		}
+
+		[SerializeField] Mode mode = Mode.Spectator;
+		[SerializeField, ReadOnly] Mode currentMode = Mode.Spectator;
 
 		float botHorizontal;
 		float botJump;
-		readonly Timer botInputHorizontalTimer = new Timer(.5f);
-		readonly Timer botInputJumpTimer = new Timer(3);
-		readonly Timer botInputShootTimer = new Timer(.35f, .68f);
-		readonly Timer botSelectEnemyTimer = new Timer(1);
+		readonly Timer botInputHorizontalTimer = (.6f, .9f);
+		readonly Timer botInputJumpTimer = (2.5f, 4.2f);
+		readonly Timer botSelectEnemyTimer = 1;
 		BatEnemy botCurrentEnemy;
 
+		SpectatorCamera spectatorCamera;
+		Button respawnButton;
+		Texture2D aimCursor32;
+		Texture2D aimCursor64;
+
+		Coroutine respawnCoroutine;
+
 		void Awake() {
+			if (instance) {
+				Debug.LogError($"{instance} already exists");
+				Destroy(this);
+				return;
+			}
+			instance = this;
 			player = GetComponent<Player>();
 			player.attractor.body.mass = 1;
 			player.onReceiveDamage.AddListener(damage => {
-				player.currentHealth -= damage;
-				if (player.currentHealth <= 0) {
-					player.SetDead();
-					// gameObject.DestroySelf(3);
-				}
-				player.hitSoundEffect.Play(this);
+				player.ChangeHealth(-damage);
 				CameraShake.Add(CameraControl.instance.playerReceiveDamageShake);
 			});
-		}
-
-		void OnEnable() {
-			var texture = Resources.Load<Texture2D>("Aim Cursor");
-			Cursor.SetCursor(texture, new Vector2(16, 16), CursorMode.ForceSoftware);
-		}
-
-		void OnDisable() {
-			Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
-		}
-
-		void OnDestroy() {
-			var button = Button.SetActiveByTag("Spawn Button");
-			if (button) {
-				button.GetComponentInChildren<UnityEngine.UI.Text>().text = "RESPAWN";
+			spectatorCamera = FindObjectOfType<SpectatorCamera>();
+			respawnButton = Button.Get("Respawn Button");
+			aimCursor32 = Resources.Load<Texture2D>("Aim Cursor 32");
+			aimCursor64 = Resources.Load<Texture2D>("Aim Cursor 64");
+			if (NetworkManager.botMode) {
+				mode = Mode.InGameClientBot;
+			} else {
+				mode = Mode.InGamePlayer;
 			}
 		}
 
 		void Update() {
-			if (bot && Input.GetMouseButtonDown(0)) {
-				bot = false;
-				return;
+			UpdateMode();
+			switch (currentMode) {
+				case Mode.Spectator:
+					StopRespawnCoroutine();
+					Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+					respawnButton.gameObject.SetActive(false);
+					spectatorCamera.gameObject.SetActive(true);
+					CameraControl.instance.SetTarget(spectatorCamera.transform, 5);
+					break;
+
+				case Mode.InGameClientBot:
+					Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+					respawnButton.gameObject.SetActive(false);
+					spectatorCamera.gameObject.SetActive(false);
+					CameraControl.instance.SetTarget(player.transform, 30);
+					if (player.isDead) {
+						StartRespawnCoroutine();
+					}
+					UpdateByBot();
+					break;
+
+				case Mode.InGamePlayer:
+					StopRespawnCoroutine();
+					if (player.isDead) {
+						Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+						respawnButton.gameObject.SetActive(true);
+						spectatorCamera.gameObject.SetActive(true);
+						CameraControl.instance.SetTarget(spectatorCamera.transform, 5);
+						return;
+					}
+					if (Screen.width > 2160) {
+						Cursor.SetCursor(aimCursor64, new Vector2(32, 32), CursorMode.ForceSoftware);
+					} else {
+						Cursor.SetCursor(aimCursor32, new Vector2(16, 16), CursorMode.ForceSoftware);
+					}
+					respawnButton.gameObject.SetActive(false);
+					spectatorCamera.gameObject.SetActive(false);
+					CameraControl.instance.SetTarget(player.transform, 30);
+					UpdateByInput();
+					break;
 			}
-			if (bot) {
-				UpdateByBot();
-			} else {
-				UpdateByInput();
+		}
+
+		void StartRespawnCoroutine() {
+			if (respawnCoroutine == null) {
+				IEnumerator RespawnRoutine() {
+					yield return new WaitForSeconds(5);
+					player.Respawn();
+					respawnCoroutine = null;
+				}
+				respawnCoroutine = StartCoroutine(RespawnRoutine());
+			}
+		}
+
+		void StopRespawnCoroutine() {
+			if (respawnCoroutine != null) {
+				StopCoroutine(respawnCoroutine);
+				respawnCoroutine = null;
+			}
+		}
+
+		void UpdateMode() {
+			if (currentMode != mode) {
+				currentMode = mode;
+				switch (mode) {
+					case Mode.Spectator:
+						player.Command_SetInGame(false);
+						player.Kill();
+						break;
+					default:
+						player.Command_SetInGame(true);
+						player.Respawn();
+						break;
+				}
 			}
 		}
 
@@ -67,7 +140,7 @@ namespace MT.Packages.LD47
 			player.inputHorizontal = Input.GetAxis("Horizontal");
 			player.inputJump = Input.GetButtonDown("Jump");
 			player.inputJumpHold = Input.GetButton("Jump");
-			player.trackingPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+			player.trackingPosition.value = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 			player.flipped = Input.mousePosition.x < Camera.main.WorldToScreenPoint(player.transform.position).x;
 			if (player.weaponInstance) {
 				void PlayerShoot() {
@@ -113,19 +186,17 @@ namespace MT.Packages.LD47
 			botJump = Mathf.Max(0, botJump - Time.deltaTime);
 			player.inputJumpHold = botJump > 0;
 			if (botSelectEnemyTimer.Update()) {
-				// botCurrentEnemy = Spawner.GetRandomSpawnerObject<BatEnemy>();
+				botCurrentEnemy = FindObjectOfType<BatEnemy>();
 			}
-			// if (botCurrentEnemy) {
-			// 	player.trackingPosition = botCurrentEnemy.transform.position;
-			// } else {
-			var offset = player.inputHorizontal > 0 ? Vector3.right : Vector3.left;
-			player.trackingPosition = transform.position + offset;
-			// }
-			player.flipped = Camera.main.WorldToScreenPoint(player.trackingPosition).x < Camera.main.WorldToScreenPoint(player.transform.position).x;
-			if (botInputShootTimer.Update()) {
-				if (botCurrentEnemy) {
-					player.Shoot(player.trackingPosition);
-				}
+			if (botCurrentEnemy) {
+				player.trackingPosition.value = botCurrentEnemy.transform.position;
+			} else {
+				var offset = player.inputHorizontal > 0 ? Vector3.right : Vector3.left;
+				player.trackingPosition.value = transform.position + Vector3.up * .5f + offset * 4;
+			}
+			player.flipped = Camera.main.WorldToScreenPoint(player.trackingPosition.current).x < Camera.main.WorldToScreenPoint(player.transform.position).x;
+			if (botCurrentEnemy && !botCurrentEnemy.dead) {
+				player.UpdateBotShoot(player.trackingPosition.current);
 			}
 		}
 	}

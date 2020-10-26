@@ -2,27 +2,26 @@
 
 namespace MT.Packages.LD47
 {
+	[RequireComponent(typeof(RectTransform))]
 	public class HealthBar : MonoBehaviour
 	{
 		RectTransform rectTransform;
-		PlayerController playerController;
+		PlayerController controller;
 
 		void Awake() {
 			rectTransform = GetComponent<RectTransform>();
 		}
 
 		void Update() {
-			if (!playerController) {
-				playerController = FindObjectOfType<PlayerController>();
+			if (!controller) {
+				controller = FindObjectOfType<PlayerController>();
 			}
-			float x;
-			if (playerController) {
-				var player = playerController.player;
-				x = player.currentHealth / player.health;
+			if (controller) {
+				// var p = controller.player;
+				// TODO: rectTransform.anchorMax = new Vector2(p.currentHealth / p.health, 1);
 			} else {
-				x = 0;
+				// rectTransform.anchorMax = new Vector2(0, 1);
 			}
-			rectTransform.anchorMax = new Vector2(x, 1);
 		}
 	}
 }

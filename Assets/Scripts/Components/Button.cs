@@ -8,20 +8,24 @@ namespace MT.Packages.LD47
     {
 		public static List<Button> instances = new List<Button>();
 
-		public static Button SetActiveByTag(string tag) {
+		public static Button Get(string tag) {
 			foreach (var instance in instances) {
 				if (instance.CompareTag(tag)) {
-					instance.gameObject.SetActive(true);
 					return instance;
 				}
 			}
 			return null;
 		}
 
+		[SerializeField] bool active = true;
+
 		public UnityEngine.Events.UnityEvent onClick = new UnityEngine.Events.UnityEvent();
 
 		void Awake() {
 			instances.Add(this);
+			if (!active) {
+				gameObject.SetActive(false);
+			}
 		}
 
 		void OnDestroy() {
@@ -30,10 +34,6 @@ namespace MT.Packages.LD47
 
 		public void OnPointerDown(PointerEventData eventData) {
 			onClick.Invoke();
-		}
-
-		public void SpawnPlayer() {
-			// MultiplayerGame.instance.spawnPlayer = true;
 		}
 	}
 }
