@@ -8,7 +8,7 @@ namespace MT.Packages.LD47
 
 		public Vector2 interval { get; private set; } = Vector2.zero;
 
-		float time;
+		public float time { get; private set; }
 
 		public static implicit operator Timer(float interval) {
 			return new Timer(interval);
@@ -45,9 +45,16 @@ namespace MT.Packages.LD47
 
 		float GetInterval() {
 			if (interval.y > interval.x) {
-				return UnityEngine.Random.Range(interval.x, interval.y);
+				return Random.Range(interval.x, interval.y);
 			}
 			return interval.x;
+		}
+
+		public void SetInterval(float interval) {
+			if (this.interval.x != interval) {
+				this.interval = new Vector2(interval, interval);
+				Reset();
+			}
 		}
 	}
 }

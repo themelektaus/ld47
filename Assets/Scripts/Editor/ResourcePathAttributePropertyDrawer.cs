@@ -11,18 +11,26 @@ namespace MT.Packages.LD47.Editor
 		}
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-			var files = Utils.GetFilesByFolder("Resources", (attribute as ResourcePathAttribute).extensions);
+			var (files, index) = Begin(property.stringValue, (attribute as ResourcePathAttribute).extensions);
+			index = EditorGUI.Popup(position, label.text, index, files);
+			property.stringValue = End(files, index);
+		}
+
+		public static (string[], int) Begin(string value, params string[] extensions) {
+			var files = Utils.GetFilesByFolder("Resources", extensions);
 			files.Insert(0, "-");
-			int index = files.IndexOf(property.stringValue);
+			int index = files.IndexOf(value);
 			if (index == -1) {
 				index = 0;
 			}
-			index = EditorGUI.Popup(position, label.text, index, files.ToArray());
+			return (files.ToArray(), index);
+		}
+
+		public static string End(string[] files, int index) {
 			if (index == 0) {
-				property.stringValue = "";
-			} else {
-				property.stringValue = files[index];
+				return "";
 			}
+			return files[index];
 		}
 	}
 }

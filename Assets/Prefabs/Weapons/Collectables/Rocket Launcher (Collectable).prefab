@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7036721051168736597}
   - component: {fileID: 824959006174202101}
   - component: {fileID: 8060538369336215258}
+  - component: {fileID: 8073407137380011601}
   m_Layer: 0
   m_Name: Rocket Launcher (Collectable)
   m_TagString: Untagged
@@ -30,7 +31,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_Children:
-  - {fileID: 3047438699151942542}
+  - {fileID: 7617193498353227909}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -74,7 +75,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.7970395, y: 0.58261704}
+  m_Size: {x: 1.0407051, y: 0.76065755}
   m_EdgeRadius: 0
 --- !u!114 &8060538369336215258
 MonoBehaviour:
@@ -94,16 +95,83 @@ MonoBehaviour:
   weaponName: Rocket Launcher
   sprite: {fileID: 8706415463040494673}
   respawnDelay: 20
+  triggerInterval: 0.125
+--- !u!95 &8073407137380011601
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5143329281742058862}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 22c24ed1e98caf346b3d49669a91ea51, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!1 &6773911716110752857
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7617193498353227909}
+  m_Layer: 0
+  m_Name: Sprite
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7617193498353227909
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6773911716110752857}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 3047438699151942542}
+  m_Father: {fileID: 5143329281742058863}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &5466130821452271675
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
-    m_TransformParent: {fileID: 5143329281742058863}
+    m_TransformParent: {fileID: 7617193498353227909}
     m_Modifications:
     - target: {fileID: 1507600278114640564, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
       propertyPath: m_Name
       value: Starter Gun Sprite
+      objectReference: {fileID: 0}
+    - target: {fileID: 3677470267275557994, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 3286163911610860551, guid: 79cefc18434483b45812994b27e3cf4d, type: 3}
+    - target: {fileID: 3677470267275557994, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_SortingLayerID
+      value: -306949205
+      objectReference: {fileID: 0}
+    - target: {fileID: 3677470267275557994, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_SortingLayer
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3677470267275557994, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_SortingOrder
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7030458065824576437, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
       propertyPath: m_RootOrder
@@ -120,6 +188,30 @@ PrefabInstance:
     - target: {fileID: 7030458065824576437, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7030458065824576437, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.007
+      objectReference: {fileID: 0}
+    - target: {fileID: 7030458065824576437, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.007
+      objectReference: {fileID: 0}
+    - target: {fileID: 7030458065824576437, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.0070000007
+      objectReference: {fileID: 0}
+    - target: {fileID: 7030458065824576437, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7030458065824576437, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7030458065824576437, guid: 61a4da263f6f77e438c2373af848d490, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 61a4da263f6f77e438c2373af848d490, type: 3}

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-// using System.Collections.Generic;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14,101 +13,93 @@ namespace MT.Packages.LD47
 {
 	public partial class NetworkManager : Mirror.NetworkManager
 	{
-		public static List<Player> players = new List<Player>();
+		public static NetworkManager self;
 
-		public static Player GetClosestPlayer(Vector2 position) {
-			return players
-				.Where(x => x.isInGameAndAlive)
-				.Select(player => {
-					var sqrMagnitude = ((Vector2) player.transform.position - position).sqrMagnitude;
-					return (player, sqrMagnitude);
+		public static List<MonoBehaviour> entities = new List<MonoBehaviour>();
+
+		public static Character GetClosestCharacter(byte ringIndex, Vector2 position, bool includeBots, float minDistance = 0) {
+			return entities
+				.Where(x => x is Character)
+				.Select(x => x as Character)
+				.Where(x => x.isInGameAndAlive && x.GetRingIndex() == ringIndex)
+				.Where(x => includeBots || !x.isBot)
+				.Select(character => {
+					var magnitude = ((Vector2) character.transform.position - position).magnitude;
+					return (character, magnitude);
 				})
-				.OrderBy(x => x.sqrMagnitude)
+				.OrderBy(x => x.magnitude)
+				.Where(x => minDistance == 0 || x.magnitude <= minDistance)
 				.FirstOrDefault()
-				.player;
+				.character;
 		}
 
-		public static void RegisterPlayer(Player player) {
-			players.Add(player);
+		public static Enemy GetClosestEnemy(byte ringIndex, Vector2 position, float maxDistance = 0) {
+			return entities
+				.Where(x => x is Enemy)
+				.Select(x => x as Enemy)
+				.Where(x => x.isReadyAndAlive && x.GetRingIndex() == ringIndex)
+				.Select(enemy => {
+					var magnitude = ((Vector2) enemy.transform.position - position).magnitude;
+					return (enemy, magnitude);
+				})
+				.OrderBy(x => x.magnitude)
+				.Where(x => maxDistance == 0 || x.magnitude <= maxDistance)
+				.FirstOrDefault()
+				.enemy;
 		}
 
-		public static void UnregisterPlayer(Player player) {
-			players.Remove(player);
-			NetworkServer.SendToReady(new Pool_Message_DisableAll {
-				ownerID = player.netId
-			});
+		public static void Register(MonoBehaviour entity) {
+			entities.Add(entity);
 		}
 
-		public static void Respawn() {
-			PlayerController.instance.player.Respawn();
+		public static void Unregister(MonoBehaviour entity) {
+			entities.Remove(entity);
+			if (entity is Character character) {
+				Utils.SendToClients((Pool_Message_DisableAll) character.netId, true);
+			}
 		}
-
-		// static IEnumerable<System.Type> GetTypes<T>() {
-		// 	return
-		// 		from assembly in System.AppDomain.CurrentDomain.GetAssemblies()
-		// 		from type in assembly.GetTypes()
-		// 		where typeof(T).IsAssignableFrom(type)
-		// 		select type;
-		// }
-
-		// static System.Type[] poolObjectMessageTypes;
-
-		// public override void Awake() {
-		//	poolObjectMessageTypes = GetTypes<PoolObjectMessage>().ToArray();
-		//	base.Awake();
-		// }
 
 		public override void Awake() {
+			if (self) {
+				Debug.LogError("Another NetworkManager already exists :/");
+			}
+			self = this;
+			Audio.AudioLibrary.forcedOwner = this;
 			base.Awake();
-			var startMenu = GameObject.FindGameObjectWithTag("Start Menu");
 			if (SceneManager.sceneCount == 1) {
 				SceneManager.LoadScene(1, LoadSceneMode.Additive);
-			} else {
-				if (startMenu) {
-					startMenu.SetActive(false);
-				}
-				StartClientNormal();
-				return;
 			}
 #if UNITY_SERVER
+			var startMenu = GameObject.FindGameObjectWithTag("Start Menu");
 			if (startMenu) {
 				startMenu.SetActive(false);
 			}
+			StartServer();
 #elif !UNITY_EDITOR
+			var startMenu = GameObject.FindGameObjectWithTag("Start Menu");
 			if (startMenu) {
 				startMenu.SetActive(false);
 			}
 			networkAddress = "cloudbase.tk";
-			StartClientAsBot();
+			StartClient();
 #endif
 		}
 
-		public static bool botMode;
-
-		public void StartClientNormal() {
-			botMode = false;
-			StartClient();
+		public override void OnStartServer() {
+			base.OnStartServer();
+			RegisterServerMessageHandlers();
 		}
 
-		public void StartClientAsBot() {
-			botMode = true;
-			StartClient();
+		public override void OnStartClient() {
+			base.OnStartClient();
+			RegisterClientMessageHandlers();
 		}
 
-		public override void OnClientDisconnect(NetworkConnection conn) {
-			base.OnClientDisconnect(conn);
-			this.LogError($"Connecting to {networkAddress} failed");
-			if (networkAddress != "cloudbase.tk") {
-				networkAddress = "cloudbase.tk";
-				this.Log($"Trying again connecting to {networkAddress}...");
-				StartClient();
+		public void RespawnPlayer() {
+			if (CharacterController.exists && CharacterController.instance.character.isDead) {
+				CharacterController.instance.Spawn();
 			}
 		}
-
-		// public override void OnStartServer() {
-		//	base.OnStartServer();
-		//	foreach (var type in poolObjectMessageTypes) { }
-		// }
 
 #if UNITY_EDITOR
 		public static void GenerateMessageRegistrations() {
@@ -137,8 +128,7 @@ namespace MT.Packages.LD47
 {
 	public partial class NetworkManager : Mirror.NetworkManager
 	{
-		public override void OnStartServer() {
-			base.OnStartServer();
+		public void RegisterServerMessageHandlers() {
 ";
 			foreach (var messageType in messageTypes) {
 				if (messageType.GetMethod("OnServerReceive", Flags.Public | Flags.Static) != null) {
@@ -147,8 +137,7 @@ namespace MT.Packages.LD47
 			}
 			contents += @"		}
 		
-		public override void OnStartClient() {
-			base.OnStartClient();
+		public void RegisterClientMessageHandlers() {
 ";
 			foreach (var messageType in messageTypes) {
 				if (messageType.GetMethod("OnClientReceive", Flags.Public | Flags.Static) != null) {
@@ -187,4 +176,18 @@ namespace MT.Packages.LD47
 	}
 #endif
 
+	// static IEnumerable<System.Type> GetTypes<T>() {
+	// 	return
+	// 		from assembly in System.AppDomain.CurrentDomain.GetAssemblies()
+	// 		from type in assembly.GetTypes()
+	// 		where typeof(T).IsAssignableFrom(type)
+	// 		select type;
+	// }
+
+	// static System.Type[] poolObjectMessageTypes;
+
+	// public override void Awake() {
+	//	poolObjectMessageTypes = GetTypes<PoolObjectMessage>().ToArray();
+	//	base.Awake();
+	// }
 }

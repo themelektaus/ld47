@@ -5,11 +5,16 @@ namespace MT.Packages.LD47
 	{
 		public uint ownerID;
 
+		public static explicit operator Pool_Message_DisableAll(uint ownerID) {
+			return new Pool_Message_DisableAll { ownerID = ownerID };
+		}
+
 		public static void OnClientReceive(Pool_Message_DisableAll message) {
-			if (!Utils.IsMine(message.ownerID)) {
-				foreach (var pool in Pool.GetAll()) {
-					pool.DisableAll(message.ownerID);
-				}
+			if (Utils.IsMine(message.ownerID)) {
+				return;
+			}
+			foreach (var pool in Pool.GetAll()) {
+				pool.DisableAll(message.ownerID);
 			}
 		}
 	}

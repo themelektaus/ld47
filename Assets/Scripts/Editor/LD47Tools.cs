@@ -1,10 +1,13 @@
-﻿using UnityEditor;
+﻿using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 #pragma warning disable IDE0051
 
 namespace MT.Packages.LD47.Editor
 {
+	using ResourcePathProperty = ResourcePathAttributePropertyDrawer;
+
 	public class LD47Tools : EditorWindow
 	{
 		[MenuItem("Window/LD47 Tools")]
@@ -12,7 +15,7 @@ namespace MT.Packages.LD47.Editor
 			GetWindow<LD47Tools>("LD47 Tools");
 		}
 
-		Vector2[] _scrollPositions = new Vector2[4];
+		Vector2[] _scrollPositions = new Vector2[6];
 
 		static GUIStyle Padding(int left, int right, int top, int bottom) {
 			return new GUIStyle { padding = new RectOffset(left, right, top, bottom) };
@@ -27,11 +30,12 @@ namespace MT.Packages.LD47.Editor
 		}
 
 		[SerializeField] int index;
+		[SerializeField] bool botFoldout;
 
 		void OnGUI() {
 			EditorGUILayout.BeginVertical(Padding(10, 10, 10, 5), Expanded);
 			{
-				index = GUILayout.Toolbar(index, new[] { "Runtime Objects", " ", " " }, GUILayout.Height(25));
+				index = GUILayout.Toolbar(index, new[] { "Runtime Objects", "Character", "Gravitation" }, GUILayout.Height(25));
 				GUILayout.Space(10);
 				switch (index) {
 					case 0: OnGUI_0(); break;
@@ -79,42 +83,22 @@ namespace MT.Packages.LD47.Editor
 			}
 			EditorGUILayout.EndScrollView();
 
-			EditorGUILayout.LabelField("Buttons", EditorStyles.boldLabel);
-			_scrollPositions[2] = EditorGUILayout.BeginScrollView(_scrollPositions[2], Padding(0, 5, 0, 0), Expanded);
-			{
-				EditorGUI.BeginDisabledGroup(true);
-				{
-					var buttons = Button.instances;
-					if (buttons.Count == 0) {
-						EditorGUILayout.LabelField("Count: 0");
-					} else {
-						foreach (var button in buttons) {
-							EditorGUILayout.BeginHorizontal();
-							EditorGUILayout.ObjectField(button, typeof(Button), false);
-							EditorGUILayout.EndHorizontal();
-						}
-					}
-				}
-				EditorGUI.EndDisabledGroup();
-			}
-			EditorGUILayout.EndScrollView();
-
-			if (!Mirror.NetworkServer.active) {
-				return;
-			}
-			EditorGUILayout.LabelField("Players", EditorStyles.boldLabel);
+			// if (!Mirror.NetworkServer.active) {
+			// 	return;
+			// }
+			EditorGUILayout.LabelField("Character", EditorStyles.boldLabel);
 			_scrollPositions[3] = EditorGUILayout.BeginScrollView(_scrollPositions[3], Padding(0, 5, 0, 0), Expanded);
 			{
 				EditorGUI.BeginDisabledGroup(true);
 				{
-					var players = NetworkManager.players;
-					if (players.Count == 0) {
-						EditorGUILayout.LabelField("Count: 0");
+					var characters = NetworkManager.entities.Where(x => x is Character).Select(x => x as Character).ToArray();
+					if (characters.Length == 0) {
+						EditorGUILayout.LabelField("Length: 0");
 					} else {
-						foreach (var player in players) {
+						foreach (var character in characters) {
 							EditorGUILayout.BeginHorizontal();
-							EditorGUILayout.LabelField("ID: " + (player ? player.netId.ToString() : "(NULL)"), GUILayout.Width(60));
-							EditorGUILayout.ObjectField(player, typeof(Player), false);
+							EditorGUILayout.LabelField("ID: " + (character ? character.netId.ToString() : "(NULL)"), GUILayout.Width(60));
+							EditorGUILayout.ObjectField(character, typeof(Character), false);
 							EditorGUILayout.EndHorizontal();
 						}
 					}
@@ -124,12 +108,109 @@ namespace MT.Packages.LD47.Editor
 			EditorGUILayout.EndScrollView();
 		}
 
-		void OnGUI_1() {
+		Character character;
 
+		void OnGUI_1() {
+			_scrollPositions[4] = EditorGUILayout.BeginScrollView(_scrollPositions[4], Padding(0, 5, 0, 0), Expanded);
+
+			EditorGUILayout.LabelField("Character", EditorStyles.boldLabel);
+			EditorGUILayout.BeginHorizontal();
+			{
+				character = EditorGUILayout.ObjectField(character, typeof(Character), true) as Character;
+				if (character) {
+					if (GUILayout.Button("Clear", GUILayout.Width(70))) {
+						character = null;
+					}
+				} else if (GUILayout.Button("Find", GUILayout.Width(70))) {
+					character = FindObjectOfType<Character>();
+					if (character) {
+						Selection.activeGameObject = character.gameObject;
+					}
+				}
+			}
+			EditorGUILayout.EndHorizontal();
+
+			if (character) {
+				// PlayerController.instance.mode = (PlayerController.Mode) EditorGUILayout.EnumPopup("Mode", PlayerController.instance.mode);
+
+				EditorGUI.BeginDisabledGroup(true);
+				EditorGUILayout.Toggle("Is Bot", character.isBot);
+				EditorGUILayout.IntField("Ring Index", character.GetRingIndex());
+				EditorGUILayout.ObjectField("Weapon", character.weaponInstance, typeof(Weapon), false);
+				EditorGUI.EndDisabledGroup();
+
+				var (files, index) = ResourcePathProperty.Begin(character.weaponName, "prefab");
+				var newIndex = EditorGUILayout.Popup("Weapon", index, files);
+				if (newIndex != index) {
+					character.Remote_SetWeapon(ResourcePathProperty.End(files, newIndex));
+				}
+
+				if (character.hasAuthority && character.weaponInstance) {
+					EditorGUI.BeginDisabledGroup(true);
+					EditorGUILayout.FloatField("Current Ammo", character.weaponInstance.currentAmmo);
+					EditorGUI.EndDisabledGroup();
+				}
+
+				character.TryGetComponent(out CharacterBot bot);
+				if (bot) {
+					botFoldout = EditorGUILayout.Foldout(botFoldout, "Bot");
+					if (botFoldout) {
+						EditorGUI.BeginDisabledGroup(true);
+						{
+							var botTarget = bot.target;
+
+							EditorGUILayout.LabelField("Bot Target", EditorStyles.boldLabel);
+							EditorGUILayout.ObjectField("Enemy", botTarget.enemy, typeof(Enemy), false);
+							EditorGUILayout.ObjectField("Waypoint", botTarget.waypoint, typeof(Waypoint), false);
+							EditorGUILayout.ObjectField("Character", botTarget.character, typeof(Character), false);
+							EditorGUILayout.Toggle("Is Valid", botTarget.isValid != null && botTarget.isValid(botTarget.GetTransform()));
+
+							EditorGUILayout.LabelField("Misc", EditorStyles.boldLabel);
+							EditorGUILayout.FloatField("Horizontal", bot.horizontal);
+							EditorGUILayout.FloatField("Jump Time", bot.jumpTime);
+							EditorGUILayout.FloatField("Horizontal Timer (Time)", bot.horizontalTimer.time);
+							EditorGUILayout.FloatField("Target Timer (Time)", bot.targetTimer.time);
+							EditorGUILayout.FloatField("Jump Timer (Time)", bot.jumpTimer.time);
+						}
+						EditorGUI.EndDisabledGroup();
+					}
+				}
+			}
+			EditorGUILayout.EndScrollView();
 		}
 
-		void OnGUI_2() {
+		Gravitation gravitation;
+		Transform gravitationTransform;
+		float gravitationVelocity;
 
+		void OnGUI_2() {
+			_scrollPositions[5] = EditorGUILayout.BeginScrollView(_scrollPositions[5], Padding(0, 5, 0, 0), Expanded);
+			EditorGUILayout.LabelField("Gravitation", EditorStyles.boldLabel);
+			EditorGUILayout.BeginHorizontal();
+			gravitation = EditorGUILayout.ObjectField(gravitation, typeof(Gravitation), true) as Gravitation;
+			if (gravitation) {
+				if (GUILayout.Button("Clear", GUILayout.Width(70))) {
+					gravitation = null;
+				}
+			} else if (GUILayout.Button("Find", GUILayout.Width(70))) {
+				gravitation = FindObjectOfType<Gravitation>();
+			}
+			EditorGUILayout.EndHorizontal();
+			if (Event.current.modifiers == EventModifiers.Shift && gravitation && Selection.activeTransform) {
+				gravitationTransform = Selection.activeTransform;
+			} else {
+				gravitationTransform = null;
+			}
+			EditorGUILayout.EndScrollView();
+		}
+
+		void Update() {
+			if (gravitation && gravitationTransform) {
+				var eulerAngles = gravitationTransform.eulerAngles;
+				var z = Utils.GetAngle2D(gravitationTransform.position, gravitation.transform.position);
+				eulerAngles.z = Mathf.SmoothDampAngle(eulerAngles.z, z, ref gravitationVelocity, .05f);
+				gravitationTransform.eulerAngles = eulerAngles;
+			}
 		}
 	}
 }

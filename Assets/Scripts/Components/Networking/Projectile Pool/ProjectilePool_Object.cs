@@ -19,7 +19,6 @@ namespace MT.Packages.LD47
 		}
 
 		public override void OnEnableAll() {
-			position.value = transform.position;
 			sprites.SetActive(true);
 			foreach (var trailEffect in trailEffects) {
 				trailEffect.Play();
@@ -53,43 +52,36 @@ namespace MT.Packages.LD47
 				return;
 			}
 			if (collision.TryGetComponent<IHostile>(out var hostile)) {
-				if (info.ownerID == 0) {
-					if (hostile is Player player && player.isInGameAndAlive) {
-						if (damage > 0) {
-							player.ReceiveDamage(info.ownerID, damage);
-						}
-					} else {
-						return;
+				if (info.ownerRingIndex != hostile.GetRingIndex()) {
+					return;
+				}
+				if (info.ownerFraction == hostile.GetFraction()) {
+					return;
+				}
+				if (hostile is Character character && character.isInGameAndAlive) {
+					if (damage > 0) {
+						character.ReceiveDamage(info.ownerID, damage);
+					}
+				} else if (hostile is Enemy Enemy && Enemy.isReadyAndAlive) {
+					if (damage > 0) {
+						Enemy.ReceiveDamage(info.ownerID, damage);
 					}
 				} else {
-					if (hostile is BatEnemy batEnemy && !batEnemy.dead) {
-						if (damage > 0) {
-							batEnemy.ReceiveDamage(info.ownerID, damage);
-						}
-					} else {
-						return;
-					}
+					return;
 				}
 			}
 			if (explosion) {
-				Pool.Get<DefaultPool>(explosion).Spawn(GetPredictedPosition());
+				Pool.Get<DefaultPool>(explosion).Spawn(info.ownerRingIndex, GetPredictedPosition());
 			}
 			UnSpawn();
 		}
 
 		public override void OnNetworkAdd() {
-			new ProjectilePool_Message_Add {
-				info = info,
-				position = position.current,
-				direction = direction
-			}.SendToAll();
+			Utils.Send((ProjectilePool_Message_Add) (info, position.current, direction));
 		}
 
 		public override void OnNetworkUpdate() {
-			new ProjectilePool_Message_Update {
-				info = info,
-				position = GetPredictedPosition()
-			}.SendToAll();
+			Utils.Send((ProjectilePool_Message_Update) (info, GetPredictedPosition()));
 		}
 
 		Vector3 GetPredictedPosition() {

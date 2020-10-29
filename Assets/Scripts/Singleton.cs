@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace MT.Packages.LD47
 {
-    public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
-    {
+	public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
+	{
 		static List<MonoBehaviour> singletons;
 
 		public static List<MonoBehaviour> GetSingletons() {
@@ -18,15 +18,23 @@ namespace MT.Packages.LD47
 
 		static T _instance;
 
+		public static bool exists { get { return _instance; } }
+
 		public static T instance {
 			get {
-				if (!_instance) {
-					var gameObject = new GameObject();
-					_instance = gameObject.AddComponent<T>();
-					gameObject.name = _instance.ToString();
+				if (!exists) {
+					Debug.LogWarning($"Singleton<{typeof(T).Name}> not exists");
+					return null;
+
 				}
 				return _instance;
 			}
+		}
+
+		public static void CreateSingleton() {
+			var gameObject = new GameObject();
+			_instance = gameObject.AddComponent<T>();
+			gameObject.name = _instance.ToString();
 		}
 
 		protected virtual void Awake() {

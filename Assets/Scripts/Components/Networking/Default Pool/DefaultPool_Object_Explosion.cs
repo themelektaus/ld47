@@ -12,7 +12,8 @@ namespace MT.Packages.LD47
 
 		Collider2D _collider;
 
-		void Awake() {
+		protected override void Awake() {
+			base.Awake();
 			_collider = GetComponent<Collider2D>();
 		}
 
@@ -33,6 +34,9 @@ namespace MT.Packages.LD47
 		protected override void OnTrigger(Collider2D collision) {
 			base.OnTrigger(collision);
 			if (collision.TryGetComponent<IHostile>(out var hostile)) {
+				if (info.ownerRingIndex != hostile.GetRingIndex()) {
+					return;
+				}
 				if (!hostiles.Contains(hostile)) {
 					hostile.ReceiveDamage(info.ownerID, damage);
 					hostiles.Add(hostile);

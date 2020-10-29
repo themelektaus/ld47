@@ -39,19 +39,21 @@ namespace MT.Packages.LD47
 			}
 		}
 
-		protected Pool_Object Spawn() {
+		protected Pool_Object Spawn(byte ownerRingIndex, byte ownerFraction) {
 			if (Utils.TryGetMyID(out var id)) {
-				return Spawn(id, ++lastObjectID);
+				return Spawn(id, ownerRingIndex, ownerFraction, ++lastObjectID);
 			}
 			return null;
 		}
 
-		protected Pool_Object Spawn(uint ownerID, uint objectID) {
+		protected Pool_Object Spawn(uint ownerID, byte ownerRingIndex, byte ownerFraction, uint objectID) {
 			foreach (var localObject in localObjects) {
 				if (localObject.info.isInUse) {
 					continue;
 				}
 				localObject.info.ownerID = ownerID;
+				localObject.info.ownerRingIndex = ownerRingIndex;
+				localObject.info.ownerFraction = ownerFraction;
 				localObject.info.objectID = objectID;
 				OnSpawn(localObject);
 				localObject.gameObject.SetActive(true);

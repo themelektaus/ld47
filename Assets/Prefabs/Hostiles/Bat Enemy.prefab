@@ -19,6 +19,18 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &2050696121463967094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1716243780456664592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6ce2b07be48a6a42b904d6fbf6d4e42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6344083884358963311
 GameObject:
   m_ObjectHideFlags: 0
@@ -30,11 +42,12 @@ GameObject:
   - component: {fileID: 6344083884358963307}
   - component: {fileID: 9113049433961781629}
   - component: {fileID: -8445093622528591922}
+  - component: {fileID: 8216794838940869498}
   - component: {fileID: 6344083884358963306}
   - component: {fileID: 6344083884358963309}
   - component: {fileID: 6344083884358963308}
   - component: {fileID: 6344083884358963304}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Bat Enemy
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -86,8 +99,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syncMode: 0
   syncInterval: 0.1
-  clientAuthoriy: 0
   interval: 0.125
+  clientAuthoriy: 0
+--- !u!114 &8216794838940869498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6344083884358963311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f6f3bf89aa97405989c802ba270f815, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
+  clientAuthority: 0
+  animator: {fileID: 172466754582552234}
 --- !u!50 &6344083884358963306
 Rigidbody2D:
   serializedVersion: 4
@@ -157,18 +186,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syncMode: 0
   syncInterval: 0.1
-  health: 3
+  maxHealth: 3
+  state: 0
+  hitEffect: {fileID: 100002, guid: 6eeebdbfb6aef0245b5be28a11847dc1, type: 3}
+  hitSoundEffect: {fileID: 11400000, guid: ab103d4dc2153c546be10276fca77bea, type: 2}
+  ready: 0
+  dead: 0
+  ringIndex: 0
   aggroRadius: 10
   homeRadius: 2
-  aggroAggression: 0
+  aggroAggression: 1
   idleMoveSpeed: 0.5
   attackMoveSpeed: 7.5
   projectilePrefab: {fileID: 8473372537364280046, guid: 94d32dba2530bfc43b6c83574fd389a9, type: 3}
   projectileInterval: 0.5
-  hitEffect: {fileID: 100002, guid: 6eeebdbfb6aef0245b5be28a11847dc1, type: 3}
-  hitSoundEffect: {fileID: 11400000, guid: ab103d4dc2153c546be10276fca77bea, type: 2}
-  state: 0
-  dead: 0
 --- !u!1 &8074777436951515745
 GameObject:
   m_ObjectHideFlags: 0
@@ -180,7 +211,7 @@ GameObject:
   - component: {fileID: 3087635085709517518}
   - component: {fileID: 8692122508733742037}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Glow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -239,7 +270,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -1
   m_Sprite: {fileID: 21300000, guid: 8bc5362770164af45b960b316fabe2eb, type: 3}
   m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_FlipX: 0
@@ -248,7 +279,7 @@ SpriteRenderer:
   m_Size: {x: 10.24, y: 10.24}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!1001 &6040544684549385622
@@ -258,6 +289,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 6344083884358963307}
     m_Modifications:
+    - target: {fileID: 2633000112098574893, guid: 9d2e7385c1422984b9cb7c37e4ed89d9, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4901325706466124678, guid: 9d2e7385c1422984b9cb7c37e4ed89d9, type: 3}
       propertyPath: m_Name
       value: Bat Enemy

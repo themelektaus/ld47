@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   audioLibrary: {fileID: 11400000, guid: 68b93afc4d507564e9b957ddaeb0a64c, type: 2}
   audioMixerGroup: {fileID: 7228063381101143712, guid: d0831be42de44e446b1eb1bd065c08ad, type: 2}
-  volume: {x: 0.135, y: 0.135}
+  volume: {x: 0.08, y: 0.085}
   pitch: {x: 2, y: 2}
   clips:
   - {fileID: 8300000, guid: 87d144679c9a8f74e9d46085eae0c91f, type: 3}

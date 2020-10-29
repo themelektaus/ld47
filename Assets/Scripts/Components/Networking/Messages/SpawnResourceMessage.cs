@@ -15,8 +15,7 @@ namespace MT.Packages.LD47
 				resourceName = resourceName,
 				position = position
 			};
-			if (NetworkClient.active) {
-				NetworkClient.Send(message);
+			if (Utils.SendToServer(message, true)) {
 				return;
 			}
 			OnServerReceive(message);

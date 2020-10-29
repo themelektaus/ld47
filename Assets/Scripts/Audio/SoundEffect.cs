@@ -86,6 +86,9 @@ namespace MT.Packages.LD47.Audio
 					}
 					Destroy(audioSource.gameObject);
 				}
+				if (AudioLibrary.forcedOwner != null && owner != AudioLibrary.forcedOwner) {
+					Debug.LogWarning("owner != AudioLibrary.forcedOwner");
+				}
 				owner.StartCoroutine(Coroutine());
 				return audioSource;
 			}

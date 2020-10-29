@@ -47,7 +47,7 @@ namespace MT.Packages.LD47
 		}
 
 		public void UnSpawn() {
-			new Pool_Message_Disable { info = info }.SendToAll();
+			Utils.Send((Pool_Message_Disable) info);
 			Disable();
 		}
 
@@ -64,7 +64,7 @@ namespace MT.Packages.LD47
 
 		void OnDisable() {
 			if (info.isMine) {
-				new Pool_Message_Remove { info = info }.SendToAll();
+				Utils.Send((Pool_Message_Remove) info);
 			}
 			StopAllCoroutines();
 			info.ownerID = 0;

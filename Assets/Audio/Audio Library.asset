@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5131f8be1af5fe04fb7dc8246840b2e5, type: 3}
   m_Name: Audio Library
   m_EditorClassIdentifier: 
+  logging: 1
   audioMixer: {fileID: 24100000, guid: d0831be42de44e446b1eb1bd065c08ad, type: 2}
   rolloffMode: 1
-  minDistance: 15
-  maxDistance: 40
+  minDistance: 3
+  maxDistance: 45
   footstepSoundTags: []

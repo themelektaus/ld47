@@ -33,11 +33,22 @@ namespace MT.Packages.LD47
 					continue;
 				}
 				instances[i].timer = respawnDelay;
-				instances[i].gameObject = Instantiate(prefab);
-				instances[i].gameObject.transform.parent = transform;
-				instances[i].gameObject.transform.position = Random.insideUnitCircle * radius;
+				var gameObject = Instantiate(prefab);
+				var transform = gameObject.transform;
+				transform.position = (Vector2) this.transform.position + Random.insideUnitCircle * radius;
+				instances[i].gameObject = gameObject;
+				OnInstantiate(instances[i].gameObject);
 				NetworkServer.Spawn(instances[i].gameObject);
 			}
+		}
+
+		protected virtual void OnInstantiate(GameObject gameObject) {
+
+		}
+
+		void OnDrawGizmos() {
+			Gizmos.color = Color.red;
+			Gizmos.DrawWireSphere(transform.position, radius);
 		}
 	}
 }

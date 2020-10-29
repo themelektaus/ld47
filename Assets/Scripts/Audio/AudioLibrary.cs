@@ -11,6 +11,8 @@ namespace MT.Packages.LD47.Audio
 	[CreateAssetMenu(menuName = "Audio/Audio Library")]
 	public class AudioLibrary : ScriptableObject
 	{
+		public static MonoBehaviour forcedOwner;
+
 		public bool logging = true;
 		public UnityEngine.Audio.AudioMixer audioMixer;
 

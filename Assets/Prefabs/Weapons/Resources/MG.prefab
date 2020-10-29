@@ -45,9 +45,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f96f181ac1af2af4d954126ea6669321, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 0}
+  character: {fileID: 0}
   rank: 1
-  ammo: 30
+  maxAmmo: 30
   currentAmmo: 0
   projectile: {fileID: 8473372537364280046, guid: 3bbcc9ed3e99eca4c8df06c5a38bbdd9, type: 3}
   shootSoundEffect: {fileID: 11400000, guid: 4470ecb5a7fd00f4eb70f358e182c7d1, type: 2}

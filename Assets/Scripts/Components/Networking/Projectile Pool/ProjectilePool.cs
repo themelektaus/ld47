@@ -7,20 +7,20 @@ namespace MT.Packages.LD47
 		Vector3 position;
 		Vector2 direction;
 
-		public ProjectilePool_Object Spawn(Vector3 position, Vector2 direction) {
+		public ProjectilePool_Object Spawn(byte ownerRingIndex, byte ownerFraction, Vector3 position, Vector2 direction) {
 			this.position = position;
 			this.direction = direction;
-			return Spawn() as ProjectilePool_Object;
+			return Spawn(ownerRingIndex, ownerFraction) as ProjectilePool_Object;
 		}
 
-		public ProjectilePool_Object Spawn(uint ownerID, uint objectID, Vector3 position, Vector2 direction) {
+		public ProjectilePool_Object Spawn(uint ownerID, byte ownerRingIndex, byte ownerFraction, uint objectID, Vector3 position, Vector2 direction) {
 			this.position = position;
 			this.direction = direction;
-			return Spawn(ownerID, objectID) as ProjectilePool_Object;
+			return Spawn(ownerID, ownerRingIndex, ownerFraction, objectID) as ProjectilePool_Object;
 		}
 
 		protected override void OnSpawn(Pool_Object localObject) {
-			(localObject as ProjectilePool_Object).transform.position = position;
+			(localObject as ProjectilePool_Object).position.value = position;
 			(localObject as ProjectilePool_Object).direction = direction;
 		}
 

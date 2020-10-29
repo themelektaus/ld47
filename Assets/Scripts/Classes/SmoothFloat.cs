@@ -8,6 +8,11 @@ namespace MT.Packages.LD47
 		public float smoothTime;
 
 		float velocity;
+		bool isAngle;
+
+		public static implicit operator SmoothFloat((float value, float smoothTime) v) {
+			return new SmoothFloat(v.value, v.smoothTime);
+		}
 
 		public SmoothFloat(float value, float smoothTime) : base(value) {
 			this.smoothTime = smoothTime;
@@ -17,11 +22,23 @@ namespace MT.Packages.LD47
 			this.smoothTime = smoothTime;
 		}
 
+		public override void Update() {
+			isAngle = false;
+			base.Update();
+		}
+
+		public void Update(bool isAngle) {
+			this.isAngle = isAngle;
+			base.Update();
+		}
+
 		protected override float Update(float current, float target) {
 			if (smoothTime == 0) {
 				return target;
 			}
-			return Mathf.SmoothDamp(current, target, ref velocity, smoothTime);
+			return isAngle ?
+				Mathf.SmoothDampAngle(current, target, ref velocity, smoothTime) :
+				Mathf.SmoothDamp(current, target, ref velocity, smoothTime);
 		}
 	}
 }

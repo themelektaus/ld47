@@ -30,7 +30,7 @@ namespace MT.Packages.LD47
 			return value != null;
 		}
 
-		public void Update() {
+		public virtual void Update() {
 			_setCurrent(Update(_getCurrent(), target));
 		}
 
