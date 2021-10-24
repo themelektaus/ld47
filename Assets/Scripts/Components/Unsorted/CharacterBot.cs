@@ -22,19 +22,19 @@ namespace MT.Packages.LD47
 			}
 		}
 
-		[ReadOnly] public Character character;
+		[Core.Attributes.ReadOnly] public Character character;
 		public float moveSpeed = 1;
 
 		public Target target;
-		[ReadOnly] public float horizontal;
-		[ReadOnly] public float jumpTime;
+		[Core.Attributes.ReadOnly] public float horizontal;
+		[Core.Attributes.ReadOnly] public float jumpTime;
 
-		public readonly Timer horizontalTimer = (1, 1.5f);
-		public readonly Timer targetTimer = .2f;
-		public readonly Timer jumpTimer = (2.5f, 4.2f);
+		public readonly Core.Timer horizontalTimer = (1, 1.5f);
+		public readonly Core.Timer targetTimer = .2f;
+		public readonly Core.Timer jumpTimer = (2.5f, 4.2f);
 
-		readonly Timer shootTimer = (.34f, .68f);
-		readonly Timer shootHoldTimer = (.3f, 5f);
+		readonly Core.Timer shootTimer = (.34f, .68f);
+		readonly Core.Timer shootHoldTimer = (.3f, 5f);
 		bool shooting;
 
 		Coroutine respawnCoroutine;
@@ -53,7 +53,7 @@ namespace MT.Packages.LD47
 		void Awake() {
 			character = GetComponent<Character>();
 			startPosition = transform.position;
-			startRingIndex = character.ringIndex;
+			startRingIndex = character.GetRingIndex();
 		}
 
 		[ServerCallback]
@@ -111,10 +111,10 @@ namespace MT.Packages.LD47
 					horizontal = Random.value * 2 - 1;
 				} else if (target.waypoint) {
 					var w = target.waypoint;
-					horizontal = Utils.GetHorizontal(character.transform, w.GetPosition(), w.distanceDamping, .1f, .1f);
+					horizontal = Utility.GetHorizontal(character.transform, w.GetPosition(), w.distanceDamping, .1f, .1f);
 					horizontalTimer.Reset();
 				} else if (target.character) {
-					horizontal = Utils.GetHorizontal(character.transform, target.character.transform.position, 15, 5, .1f);
+					horizontal = Utility.GetHorizontal(character.transform, target.character.transform.position, 15, 5, .1f);
 					horizontalTimer.Reset();
 				} else {
 					horizontal = Random.value * 2 - 1;
@@ -166,7 +166,7 @@ namespace MT.Packages.LD47
 
 		[Server]
 		void Server_UpdateTarget() {
-			var enemy = NetworkManager.GetClosestEnemy(character.GetRingIndex(), character.transform.position, 20);
+			var enemy = NetworkManager.GetClosestAttackingEnemy(character.GetRingIndex(), character.transform.position, 20);
 			if (enemy) {
 				target.enemy = enemy;
 				return;
@@ -187,7 +187,7 @@ namespace MT.Packages.LD47
 			}
 
 			foreach (var waypoint in FindObjectsOfType<Waypoint>()
-				.Where(x => x.ringIndex == character.GetRingIndex())
+				.Where(x => x.GetRingIndex() == character.GetRingIndex())
 				.OrderBy(x => (x.GetPosition() - (Vector2) character.transform.position).sqrMagnitude)
 			) {
 				Server_SetTarget(waypoint);
@@ -203,7 +203,7 @@ namespace MT.Packages.LD47
 					if (t && t.TryGetComponent<Waypoint>(out var w)) {
 						var r = t.GetComponentInChildren<ChangeRing>();
 						if (r) {
-							if (character.GetRingIndex() == r.ringIndex) {
+							if (character.GetRingIndex() == r.GetRingIndex()) {
 								Server_SetTarget(w.GetNextWaypoint());
 								return true;
 							}
@@ -211,7 +211,7 @@ namespace MT.Packages.LD47
 							Server_SetTarget(w.GetNextWaypoint());
 							return true;
 						}
-						if (character.GetRingIndex() != w.ringIndex) {
+						if (character.GetRingIndex() != w.GetRingIndex()) {
 							return false;
 						}
 					}

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 435d677506aefb249bafdb938f50d410, type: 3}
+  m_Name: Log File
+  m_EditorClassIdentifier: 
+  entries: []
+  objects: []
+  typeNames:
+  - typeName: MT.Packages.AudioSystem.AudioLibrary
+    consoleLogging: 1
+    internalLogging: 0
+  - typeName: MT.Packages.Core.SaveablePlayerPrefs
+    consoleLogging: 1
+    internalLogging: 0
+  - typeName: MT.Packages.Core.Cache
+    consoleLogging: 1
+    internalLogging: 0
+  - typeName: MT.Packages.LD47.Character
+    consoleLogging: 0
+    internalLogging: 0
+  - typeName: MT.Packages.LD47.ChangeRing
+    consoleLogging: 0
+    internalLogging: 0
+  - typeName: MT.Packages.Core.Editor.EditorJob
+    consoleLogging: 0
+    internalLogging: 0

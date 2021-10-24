@@ -1,19 +1,17 @@
 ﻿using UnityEngine;
 using E = UnityEngine.Events;
 using Mirror;
+using MT.Packages.Core;
 
 namespace MT.Packages.LD47
 {
+	[RequireComponent(typeof(NetworkObjectInfo))]
 	public class Character : NetworkBehaviour, IHostile
 	{
 		public bool clientAuthority;
 
-		[SerializeField] bool logging = false;
-
 		[SyncVar(hook = nameof(Hook_InGame_Changed))] public bool inGame;
 		[SyncVar] public bool isBot;
-
-		[SyncVar] public byte ringIndex;
 
 		[Range(-1, 1)] public float inputHorizontal;
 		public bool inputJump;
@@ -22,17 +20,19 @@ namespace MT.Packages.LD47
 
 		[HideInInspector] public E.UnityEvent<float> onReceiveDamage = new E.UnityEvent<float>();
 
-		[ReadOnly] public Attractor attractor;
+		[Core.Attributes.ReadOnly] public Attractor attractor;
 
-		[ResourcePath("prefab"), SyncVar] public string weaponName = null;
+		[Core.Attributes.ResourcePath("prefab"), SyncVar] public string weaponName = null;
 
-		[SerializeField] Audio.SoundEffect hitSoundEffect = null;
+		[SerializeField] AudioSystem.SoundEffect hitSoundEffect = null;
+
 		[SerializeField] float maxHealth = 10;
-		[SerializeField, SyncVar] float currentHealth;
+		[SerializeField, SyncVar] float currentHealth = 0;
 
 		[SerializeField] GameObject hitEffect = null;
 
-		[SerializeField] Animator animator = null;
+		public Animator animator;
+
 		[SerializeField] Transform neck = null;
 		[SerializeField] Transform hand = null;
 
@@ -50,10 +50,27 @@ namespace MT.Packages.LD47
 		float jumpCurveTime;
 		float groundTime;
 
-		[ReadOnly] public Weapon weaponInstance;
+		[Core.Attributes.ReadOnly] public Weapon weaponInstance;
 
-		public byte GetRingIndex() {
-			return ringIndex;
+		public float GetHealthPercentage() {
+			return currentHealth / maxHealth;
+		}
+
+		public float GetAmmoPercentage() {
+			if (!weaponInstance) {
+				return 0;
+			}
+			return weaponInstance.currentAmmo / weaponInstance.maxAmmo;
+		}
+
+		public float GetCastedTimePercentage() {
+			if (!weaponInstance) {
+				return 0;
+			}
+			if (weaponInstance.castTime == 0) {
+				return 0;
+			}
+			return 1 - weaponInstance.castedTime / weaponInstance.castTime;
 		}
 
 		public byte GetFraction() {
@@ -61,15 +78,28 @@ namespace MT.Packages.LD47
 		}
 
 		public new bool hasAuthority { get { return clientAuthority ? base.hasAuthority : isServer; } }
+
 		public bool isDead { get { return currentHealth == 0; } }
+
+		public bool isInGameAndDead { get { return inGame && isDead; } }
+
 		public bool isInGameAndAlive { get { return inGame && !isDead; } }
 
 		void Awake() {
-			this.Logging(logging);
 			NetworkManager.Register(this);
 			attractor = GetComponent<Attractor>();
 			aimPosition = new SmoothVector3(transform.position + Vector3.right * 3, .2f);
 			Hook_InGame_Changed(false, false);
+		}
+
+		public override void OnStartLocalPlayer() {
+			base.OnStartLocalPlayer();
+			if (animator.TryGetComponent(out Saveable saveable)) {
+				saveable.Load();
+			}
+			if (animator.TryGetComponent(out CharacterSkin skin)) {
+				Command_ApplySkin(skin.data);
+			}
 		}
 
 		void OnDestroy() {
@@ -118,8 +148,13 @@ namespace MT.Packages.LD47
 					this.LogError("!weapon");
 					return;
 				}
-				weaponInstance = Instantiate(weapon, hand.GetChild(0));
+				var child = hand.GetChild(0);
+				weaponInstance = Instantiate(weapon, child);
 				weaponInstance.name = weaponName;
+				var scale = weaponInstance.transform.localScale;
+				scale.x /= child.localScale.x * .9f;
+				scale.y /= child.localScale.y * .9f;
+				weaponInstance.transform.localScale = scale;
 				weaponInstance.transform.localEulerAngles = new Vector3(0, 0, -90);
 				weaponInstance.character = this;
 			}
@@ -159,26 +194,27 @@ namespace MT.Packages.LD47
 		}
 
 		void UpdateHeadTracking() {
-			var angle = Utils.GetAngle2D(hand.position, aimPosition.current) - transform.localEulerAngles.z;
-			if (angle < -180) {
-				angle += 360;
-			} else if (angle > 180) {
-				angle -= 360;
+			var handAngle = Utility.GetAngle2D(hand.position, aimPosition.current) - transform.localEulerAngles.z;
+			if (handAngle < -180) {
+				handAngle += 360;
+			} else if (handAngle > 180) {
+				handAngle -= 360;
 			}
-			if (angle < 0) {
-				angle = Mathf.Clamp(angle, -140, -40);
+			float neckAngle;
+			if (handAngle < 0) {
+				neckAngle = Mathf.Clamp(handAngle, -140, -40);
 			} else {
-				angle = Mathf.Clamp(angle, 40, 140);
+				neckAngle = Mathf.Clamp(handAngle, 40, 140);
 			}
 			var scale = animator.transform.localScale;
 			if (transform.InverseTransformPoint(aimPosition.current).x < 0) {
 				scale.x = -1;
-				neck.localEulerAngles = new Vector3(0, 0, 90 - angle);
-				hand.localEulerAngles = new Vector3(0, 0, 180 - angle);
+				neck.localEulerAngles = new Vector3(0, 0, 90 - neckAngle);
+				hand.localEulerAngles = new Vector3(0, 0, 180 - handAngle);
 			} else {
 				scale.x = 1;
-				neck.localEulerAngles = new Vector3(0, 0, angle + 90);
-				hand.localEulerAngles = new Vector3(0, 0, angle + 180);
+				neck.localEulerAngles = new Vector3(0, 0, neckAngle + 90);
+				hand.localEulerAngles = new Vector3(0, 0, handAngle + 180);
 			}
 			animator.transform.localScale = scale;
 		}
@@ -194,7 +230,7 @@ namespace MT.Packages.LD47
 
 		public void Shoot(Vector2 targetPosition) {
 			if (weaponInstance && isInGameAndAlive) {
-				weaponInstance.Shoot(GetRingIndex(), GetFraction(), targetPosition);
+				weaponInstance.Shoot(this.GetRingIndex(), GetFraction(), targetPosition);
 			}
 		}
 
@@ -213,18 +249,15 @@ namespace MT.Packages.LD47
 
 		[Command(ignoreAuthority = true)]
 		void Command_TakeDamage(uint senderID, float damage) {
-			this.Log($"[Command(ignoreAuthority = true)] Command_TakeDamage({senderID}, {damage})");
+			// this.Log($"[Command(ignoreAuthority = true)] Command_TakeDamage({senderID}, {damage})");
 			ClientRpc_TakeDamage(senderID, damage);
 		}
 
 		[ClientRpc]
 		void ClientRpc_TakeDamage(uint senderID, float damage) {
-			this.Log($"[ClientRpc] ClientRpc_TakeDamage({senderID}, {damage})");
+			// this.Log($"[ClientRpc] ClientRpc_TakeDamage({senderID}, {damage})");
 			TakeDamageFX();
 			onReceiveDamage.Invoke(damage);
-			if (Utils.IsMine(senderID)) {
-				CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
-			}
 		}
 
 		[Server]
@@ -236,7 +269,7 @@ namespace MT.Packages.LD47
 		void TakeDamageFX() {
 			var effect = Instantiate(hitEffect).ToTempInstance();
 			effect.transform.position = attractor.body.worldCenterOfMass;
-			hitSoundEffect.Play(NetworkManager.self, transform.position);
+			hitSoundEffect.Play(transform.position);
 		}
 
 
@@ -401,7 +434,32 @@ namespace MT.Packages.LD47
 		[Server]
 		public void Server_SetRingIndex(byte ringIndex) {
 			this.Log($"[Server] Server_SetRingIndex({ringIndex})");
-			this.ringIndex = ringIndex;
+			this.SetRingIndex(ringIndex);
+		}
+
+
+
+		public void Remote_Instantiate(string resourcePath, Vector3 position) {
+			Instantiate(resourcePath, position);
+			if (isServer) {
+				ClientRpc_Instantiate(resourcePath, position);
+			} else {
+				Command_Instantiate(resourcePath, position);
+			}
+		}
+
+		[Command]
+		void Command_Instantiate(string resourcePath, Vector3 position) {
+			ClientRpc_Instantiate(resourcePath, position);
+		}
+
+		[ClientRpc(excludeOwner = true)]
+		void ClientRpc_Instantiate(string resourcePath, Vector3 position) {
+			Instantiate(resourcePath, position);
+		}
+
+		void Instantiate(string resourcePath, Vector3 position) {
+			Instantiate(Core.Cache.Get(resourcePath), position, Quaternion.identity).ToTempInstance();
 		}
 
 
@@ -426,6 +484,28 @@ namespace MT.Packages.LD47
 			// this.Log($"[ClientRpc(excludeOwner = true)] ClientRpc_ApplyAppearance(...)");
 			this.aimPosition.target = aimPosition;
 			attractor.localVelocityX = localVelocityX;
+		}
+
+
+
+		void ApplySkin(CharacterSkin.Data data) {
+			if (animator.TryGetComponent(out CharacterSkin skin)) {
+				skin.data = data;
+			}
+		}
+
+		[Command]
+		public void Command_ApplySkin(CharacterSkin.Data data) {
+			this.Log($"[Command] Command_ApplySkin({data})");
+			ApplySkin(data);
+			ClientRpc_ApplySkin(data);
+			NetworkManager.instance.Server_SendCharacterSkins();
+		}
+
+		[ClientRpc(excludeOwner = true)]
+		public void ClientRpc_ApplySkin(CharacterSkin.Data data) {
+			this.Log($"[ClientRpc(excludeOwner = true)] ClientRpc_ApplySkin({data})");
+			ApplySkin(data);
 		}
 
 

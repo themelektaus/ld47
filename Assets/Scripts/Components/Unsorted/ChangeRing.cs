@@ -2,16 +2,11 @@
 
 namespace MT.Packages.LD47
 {
+	[RequireComponent(typeof(ObjectInfo))]
 	public class ChangeRing : MonoBehaviour
 	{
-		public byte ringIndex;
-
-		[SerializeField, ResourcePath("prefab")] string particleEffectName = null;
-		[SerializeField] Audio.SoundEffect soundEffect = null;
-
-		void Awake() {
-			this.Logging(false);
-		}
+		[SerializeField, Core.Attributes.ResourcePath("prefab")] string particleEffectName = null;
+		[SerializeField] AudioSystem.SoundEffect soundEffect = null;
 
 		void OnTriggerEnter2D(Collider2D collision) {
 			if (collision.isTrigger) {
@@ -19,14 +14,14 @@ namespace MT.Packages.LD47
 			}
 			var character = collision.GetComponentInParent<Character>();
 			if (character && character.hasAuthority) {
-				if (character.GetRingIndex() == ringIndex) {
+				if (character.GetRingIndex() == this.GetRingIndex()) {
 					return;
 				}
 				character.AbortJump();
-				character.Remote_SetRingIndex(ringIndex);
-				soundEffect.Play(NetworkManager.self);
-				SpawnResourceMessage.Spawn(character.netId, particleEffectName, transform.position);
-				this.Log($"{name} activated by character {character.netId}");
+				character.Remote_SetRingIndex(this.GetRingIndex());
+				character.Remote_Instantiate(particleEffectName, transform.position);
+				soundEffect.Play(transform.position);
+				this.Log($"Activated by character {character.netId}");
 			}
 		}
 	}

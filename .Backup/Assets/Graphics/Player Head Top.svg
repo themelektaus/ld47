@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: CorelDRAW 2019 (64-Bit) -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="100%" height="100%" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 74.0833 49.3889"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil0 {fill:#0B0980}
+    .fil2 {fill:#46C5DB}
+    .fil1 {fill:#46C5DB;fill-rule:nonzero}
+   ]]>
+  </style>
+ </defs>
+ <g id="Ebene_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <path class="fil0" d="M24.6944 1.7639l24.6945 0c12.6118,0 22.9305,10.3187 22.9305,22.9305l0 22.9306 -70.5555 0 0 -22.9306c0,-12.6118 10.3187,-22.9305 22.9305,-22.9305z"/>
+  <path class="fil1" d="M24.6944 0l24.6945 0c6.7927,0 12.9669,2.7778 17.4418,7.2526 4.4749,4.475 7.2526,10.6491 7.2526,17.4418l0 24.6945 -74.0833 0 0 -24.6945c0,-6.7927 2.7777,-12.9668 7.2526,-17.4418 4.4749,-4.4748 10.6491,-7.2526 17.4418,-7.2526zm24.6945 3.5278l-24.6945 0c-5.819,0 -11.1103,2.3818 -14.9476,6.219 -3.8372,3.8373 -6.219,9.1286 -6.219,14.9476l0 21.1667 67.0277 0 0 -21.1667c0,-5.819 -2.3818,-11.1103 -6.219,-14.9476 -3.8373,-3.8372 -9.1286,-6.219 -14.9476,-6.219z"/>
+  <circle class="fil2" cx="58.2079" cy="22.8421" r="4.3656"/>
+  <circle class="fil2" cx="35.9829" cy="22.8421" r="4.3656"/>
+ </g>
+</svg>

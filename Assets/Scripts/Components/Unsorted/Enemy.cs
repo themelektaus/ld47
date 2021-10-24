@@ -1,23 +1,29 @@
 ﻿using Mirror;
+using MT.Packages.Core;
 using UnityEngine;
 
 namespace MT.Packages.LD47
 {
+	[RequireComponent(typeof(NetworkObjectInfo))]
 	public abstract class Enemy : NetworkBehaviour, IHostile
 	{
 		public enum State
 		{
 			Idle,
-			Attack
+			Attack,
+			Ignore
 		}
+
+		protected abstract bool ringIndexFading { get; }
 
 		protected Vector2 startPosition { get; private set; }
 
 		[SerializeField] float maxHealth = 3;
-		[SerializeField] protected State state = State.Idle;
+		[SerializeField] public State state = State.Idle;
 
 		[SerializeField] GameObject hitEffect = null;
-		[SerializeField] Audio.SoundEffect hitSoundEffect = null;
+		[SerializeField] float hitEffectScale = 1;
+		[SerializeField] AudioSystem.SoundEffect hitSoundEffect = null;
 
 		protected Animator animator;
 		float currentHealth;
@@ -27,13 +33,8 @@ namespace MT.Packages.LD47
 
 		[SyncVar] public bool ready;
 		[SyncVar] public bool dead;
-		[SyncVar] public byte ringIndex;
 
 		public bool isReadyAndAlive { get { return ready && !dead; } }
-
-		public byte GetRingIndex() {
-			return ringIndex;
-		}
 
 		public byte GetFraction() {
 			return 2;
@@ -58,6 +59,17 @@ namespace MT.Packages.LD47
 			startPosition = transform.position;
 		}
 
+		public override void OnStartClient() {
+			base.OnStartClient();
+			if (isServer) {
+				return;
+			}
+			if (TryGetComponent(out Attractor attractor)) {
+				attractor.mode = Attractor.Mode.Frozen;
+				attractor.body.bodyType = RigidbodyType2D.Kinematic;
+			}
+		}
+
 		[ServerCallback]
 		protected void Update() {
 			animator.SetBool("Dead", dead);
@@ -65,10 +77,31 @@ namespace MT.Packages.LD47
 		}
 
 		protected abstract void OnServerUpdate();
+		protected abstract void OnFixedUpdate_Idle();
+		protected abstract void OnFixedUpdate_Attack();
+
+		[ServerCallback]
+		void FixedUpdate() {
+			if (!isReadyAndAlive) {
+				return;
+			}
+			switch (state) {
+				case State.Idle:
+				case State.Ignore:
+					OnFixedUpdate_Idle();
+					break;
+				case State.Attack:
+					OnFixedUpdate_Attack();
+					break;
+			}
+		}
 
 		[ClientCallback]
 		void LateUpdate() {
-			if (CharacterController.exists && CharacterController.instance.character.GetRingIndex() != GetRingIndex()) {
+			if (!ringIndexFading) {
+				return;
+			}
+			if (CharacterController.instance && CharacterController.instance.character.GetRingIndex() != this.GetRingIndex()) {
 				alpha.target = .3f;
 			} else {
 				alpha.target = 1;
@@ -86,20 +119,10 @@ namespace MT.Packages.LD47
 				TakeDamageData(damage);
 				TakeDamageFX();
 				RPC_TakeDamageFX(0);
-				if (Utils.TryGetConnection(senderID, out var connection)) {
-					TargetRpc_CameraShake(connection);
-				}
 				return;
 			}
 			TakeDamage(senderID, damage);
 			TakeDamageFX();
-			CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
-		}
-
-		[TargetRpc]
-		void TargetRpc_CameraShake(NetworkConnection target) {
-			this.Log("[TargetRpc] TargetRPC_CameraShake(...)");
-			CameraShake.Add(CameraControl.instance.enemyReceiveDamageShake);
 		}
 
 		[Command(ignoreAuthority = true)]
@@ -117,13 +140,16 @@ namespace MT.Packages.LD47
 		}
 
 		void TakeDamageFX() {
-			hitSoundEffect.Play(NetworkManager.self, transform.position);
-			Instantiate(hitEffect).ToTempInstance().transform.position = transform.position;
+			hitSoundEffect.Play(transform.position);
+			Instantiate(hitEffect)
+				.ToTempInstance()
+				.SetTransformPosition(transform.position)
+				.SetTransformLocalScale(Vector3.Scale(transform.localScale, hitEffect.transform.localScale * hitEffectScale));
 		}
 
 		[ClientRpc]
 		void RPC_TakeDamageFX(uint senderID) {
-			if (!Utils.IsMine(senderID)) {
+			if (!Utility.IsMine(senderID)) {
 				TakeDamageFX();
 			}
 		}

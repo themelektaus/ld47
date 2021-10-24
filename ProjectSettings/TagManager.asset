@@ -4,10 +4,7 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Enemy
   - Player Spawn Area
-  - Respawn Button
-  - Start Menu
   - Auto Destroy
   - Hole
   - Exhauster
@@ -62,4 +59,7 @@ TagManager:
     locked: 0
   - name: Default Foreground FX
     uniqueID: 1720979189
+    locked: 0
+  - name: Foreground UI
+    uniqueID: 1966836257
     locked: 0

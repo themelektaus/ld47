@@ -1,12 +1,15 @@
-﻿using UnityEngine;
+﻿using MT.Packages.Core;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace MT.Packages.LD47
 {
 	[RequireComponent(typeof(Character))]
-	public class CharacterController : Singleton<CharacterController>
+	public class CharacterController : MonoBehaviour
 	{
-		[ReadOnly] public Character character;
+		public static CharacterController instance;
+
+		[Core.Attributes.ReadOnly] public Character character;
 
 		[SerializeField]
 		[FormerlySerializedAs("aimCursor32")]
@@ -20,36 +23,21 @@ namespace MT.Packages.LD47
 			hotspot = new Vector2(24, 24)
 		};
 
-		protected override void Awake() {
-			base.Awake();
+		void Awake() {
 			character = GetComponent<Character>();
-		}
-
-		protected override void OnDestroy() {
-			base.OnDestroy();
-			if (CameraControl.exists && character.hasAuthority && character.clientAuthority) {
-				CameraControl.instance.SetTarget(null, 5, 5);
-			}
 		}
 
 		void Start() {
 			if (!character.hasAuthority) {
+				Destroy(this);
 				return;
 			}
 			if (character.isLocalPlayer) {
+				this.SetSingleton(ref instance);
 				StartLocalPlayer();
 			}
 			character.Remote_SetBot(false);
 			Spawn();
-		}
-
-		public void Spawn() {
-			var playerSpawnArea = GameObject.FindGameObjectWithTag("Player Spawn Area");
-			if (playerSpawnArea) {
-				character.Respawn(playerSpawnArea.transform.position, 0);
-			} else {
-				Debug.LogError("There is no GameObject tagged \"Player Spawn Area\" in the scene");
-			}
 		}
 
 		void StartLocalPlayer() {
@@ -65,17 +53,43 @@ namespace MT.Packages.LD47
 			}
 		}
 
+		public void Spawn() {
+			var playerSpawnArea = GameObject.FindGameObjectWithTag("Player Spawn Area");
+			if (playerSpawnArea) {
+				character.Respawn(playerSpawnArea.transform.position, 0);
+			} else {
+				Debug.LogError("There is no GameObject tagged \"Player Spawn Area\" in the scene");
+			}
+		}
+
+		void OnDestroy() {
+			if (character.isLocalPlayer) {
+				this.UnsetSingletone(ref instance);
+				StopLocalPlayer();
+			}
+		}
+
+		void StopLocalPlayer() {
+			if (CameraControl.exists && character.hasAuthority && character.clientAuthority) {
+				CameraControl.instance.SetTarget(null, 5, 5);
+			}
+			if (Screen.width < 2160) {
+				aimCursorSmall.Unuse();
+			} else {
+				aimCursorMedium.Unuse();
+			}
+			
+		}
+
 		void Update() {
 			if (!character.hasAuthority) {
 				return;
 			}
-			if (character.isDead) {
-				Button.Get("Respawn Button").gameObject.SetActive(true);
-			} else {
-				Button.Get("Respawn Button").gameObject.SetActive(false);
+			if (!character.isDead) {
 				UpdateController();
 			}
 		}
+
 		void UpdateController() {
 			character.inputHorizontal = Input.GetAxis("Horizontal");
 			character.inputJump = Input.GetButtonDown("Jump");

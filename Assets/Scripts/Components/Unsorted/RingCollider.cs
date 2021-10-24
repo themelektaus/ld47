@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using MT.Packages.Core;
 using System.Linq;
 using UnityEngine;
 
@@ -23,24 +23,7 @@ namespace MT.Packages.LD47
 
 		[SerializeField] bool showColliders = false;
 
-		[SerializeField, ReadOnly] GameObject[] children;
-
-		string hash = null;
-
-		static string ConvertToHash(Color color) {
-			return color.r + "," + color.g + "," + color.b + "," + color.a;
-		}
-
-		string GetHash() {
-			string result = $"{radius};{segments};{segmentHeight};{segmentLength};";
-			result += $"[{string.Join(",", holeSegments)}];";
-			result += (sprite ? sprite.name : "null") + ";";
-			result += (spriteMaterial ? spriteMaterial.name : "null") + ";";
-			result += "[" + ConvertToHash(spriteColor) + "];";
-			result += (backgroundSpriteRenderer ? backgroundSpriteRenderer.name : "null") + ";";
-			result += "[" + ConvertToHash(backgroundSpriteColor) + "];";
-			return result;
-		}
+		[SerializeField, Core.Attributes.ReadOnly] GameObject[] children;
 
 		void OnEnable() {
 			Refresh();
@@ -54,12 +37,30 @@ namespace MT.Packages.LD47
 			var s = transform.localScale.x;
 			transform.localScale = new Vector3(s, s, s);
 
-			var hash = GetHash();
-			if (this.hash == hash) {
+			if (!Application.isPlaying) {
 				return;
 			}
-			this.hash = hash;
-			Refresh();
+
+			// if (Hash.HasChanged(this,
+			// 	radius, segments,
+			// 	segmentHeight, segmentLength,
+			// 	holeSegments,
+			// 	sprite, spriteMaterial, spriteColor,
+			// 	backgroundSpriteRenderer, backgroundSpriteColor
+			// )) {
+			// 	Refresh();
+			// }
+
+			var holeSegmentsHashCode = holeSegments.ToHashCode();
+			if (Hash.HasChanged(this, new {
+				radius, segments,
+				segmentHeight, segmentLength,
+				holeSegmentsHashCode,
+				sprite.name, spriteMaterial, spriteColor,
+				backgroundSpriteRenderer, backgroundSpriteColor
+			}.GetHashCode())) {
+				Refresh();
+			}
 		}
 
 		void Refresh() {
@@ -87,19 +88,13 @@ namespace MT.Packages.LD47
 			if (!colliderContainer) {
 				return false;
 			}
-			var children = new List<GameObject>();
-			foreach (Transform t in colliderContainer.transform) {
-				children.Add(t.gameObject);
-			}
-			foreach (var child in children) {
-				DestroyImmediate(child);
-			}
-			this.children = new GameObject[0];
+			colliderContainer.transform.DestroyChildrenImmediate();
+			children = new GameObject[0];
 			return true;
 		}
 
 		GameObject CreateSegment(int index, float angles) {
-			var child = new GameObject(index.ToString());
+			var child = new GameObject($"Ring Collider {index}");
 			var transform = child.transform;
 			transform.SetParent(colliderContainer, false);
 

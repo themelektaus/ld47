@@ -1,4 +1,5 @@
 ﻿using Mirror;
+using MT.Packages.Core;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ namespace MT.Packages.LD47
 	public class CollectableWeapon : NetworkBehaviour
 	{
 		[SerializeField, SyncVar] bool active = true;
-		[SerializeField, ResourcePath("prefab")] string weaponName = null;
+		[SerializeField, Core.Attributes.ResourcePath("prefab")] string weaponName = null;
 		int weaponRank;
 
 		[SerializeField] SpriteRenderer sprite = null;
@@ -15,13 +16,8 @@ namespace MT.Packages.LD47
 		[SerializeField, Range(0.05f, 1f)] float triggerInterval = .35f;
 
 		float respawnTimer;
-		Animator animator;
 		readonly Timer triggerTimer = 1;
 		readonly List<Character> characters = new List<Character>();
-
-		void Awake() {
-			animator = GetComponent<Animator>();
-		}
 
 		public override void OnStartServer() {
 			base.OnStartServer();
@@ -30,7 +26,7 @@ namespace MT.Packages.LD47
 		}
 
 		void Update() {
-			animator.SetBool("Active", active);
+			this.GetFromCache<Animator>().SetBool("Active", active);
 			var color = sprite.color;
 			color.a = active ? 1 : .3f;
 			sprite.color = color;

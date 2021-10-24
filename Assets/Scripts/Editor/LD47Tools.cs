@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -6,7 +7,7 @@ using UnityEngine;
 
 namespace MT.Packages.LD47.Editor
 {
-	using ResourcePathProperty = ResourcePathAttributePropertyDrawer;
+	using ResourcePathProperty = Core.Editor.ResourcePathAttributePropertyDrawer;
 
 	public class LD47Tools : EditorWindow
 	{
@@ -14,8 +15,6 @@ namespace MT.Packages.LD47.Editor
 		private static void Init() {
 			GetWindow<LD47Tools>("LD47 Tools");
 		}
-
-		Vector2[] _scrollPositions = new Vector2[6];
 
 		static GUIStyle Padding(int left, int right, int top, int bottom) {
 			return new GUIStyle { padding = new RectOffset(left, right, top, bottom) };
@@ -25,17 +24,84 @@ namespace MT.Packages.LD47.Editor
 			get { return new[] { GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true) }; }
 		}
 
-		void OnInspectorUpdate() {
-			Repaint();
+		class SceneObjectPopup<T> where T : Object
+		{
+			T[] objects = new T[0];
+			int index = -1;
+
+			public bool Draw(string label, out T value) {
+				EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+				EditorGUILayout.BeginHorizontal();
+				{
+					objects = objects.Where(x => x).ToArray();
+					if (objects.Length == 0) {
+						index = -1;
+					}
+					if (index == -1) {
+						EditorGUI.BeginDisabledGroup(true);
+						GUILayout.Button("◀");
+						EditorGUILayout.Popup(0, new[] { "(None)" });
+						GUILayout.Button("▶");
+						EditorGUI.EndDisabledGroup();
+						if (GUILayout.Button("Find", GUILayout.Width(70))) {
+							objects = FindObjectsOfType<T>();
+							index = objects.Length > 0 ? 0 : -1;
+						}
+					} else {
+						EditorGUI.BeginDisabledGroup(index == 0);
+						if (GUILayout.Button("◀")) {
+							index--;
+						}
+						EditorGUI.EndDisabledGroup();
+						index = Mathf.Clamp(EditorGUILayout.Popup(index, objects.Select(x => x.name).ToArray()), 0, objects.Length - 1);
+						EditorGUI.BeginDisabledGroup(index == objects.Length - 1);
+						if (GUILayout.Button("▶")) {
+							index++;
+						}
+						EditorGUI.EndDisabledGroup();
+						if (GUILayout.Button("Clear", GUILayout.Width(70))) {
+							index = -1;
+						}
+					}
+				}
+				EditorGUILayout.EndHorizontal();
+				return TryGetValue(out value);
+			}
+
+			public bool TryGetValue(out T value) {
+				if (index > -1) {
+					value = objects[index];
+					return true;
+				}
+				value = null;
+				return false;
+			}
 		}
 
+		[SerializeField] List<Vector2> scrollPositions;
+		[SerializeField] int scrollPositionIndex;
+
+		[SerializeField] Dictionary<Object, bool> foldouts;
+
 		[SerializeField] int index;
-		[SerializeField] bool botFoldout;
+
+		SceneObjectPopup<Character> characters = new SceneObjectPopup<Character>();
+
+		SceneObjectPopup<Gravitation> gravitations = new SceneObjectPopup<Gravitation>();
+		Transform[] gravitationTransforms;
+		float gravitationVelocity;
 
 		void OnGUI() {
+			if (scrollPositions == null) {
+				scrollPositions = new List<Vector2>();
+			}
+			scrollPositionIndex = 0;
+			if (foldouts == null) {
+				foldouts = new Dictionary<Object, bool>();
+			}
 			EditorGUILayout.BeginVertical(Padding(10, 10, 10, 5), Expanded);
 			{
-				index = GUILayout.Toolbar(index, new[] { "Runtime Objects", "Character", "Gravitation" }, GUILayout.Height(25));
+				index = GUILayout.Toolbar(index, new[] { "Runtime", "Character", "Gravitation" }, GUILayout.Height(25));
 				GUILayout.Space(10);
 				switch (index) {
 					case 0: OnGUI_0(); break;
@@ -48,11 +114,11 @@ namespace MT.Packages.LD47.Editor
 
 		void OnGUI_0() {
 			EditorGUILayout.LabelField("Singletons", EditorStyles.boldLabel);
-			_scrollPositions[0] = EditorGUILayout.BeginScrollView(_scrollPositions[0], Padding(0, 5, 0, 0), Expanded);
+			BeginScrollView();
 			{
 				EditorGUI.BeginDisabledGroup(true);
 				{
-					var singletons = Singleton<MonoBehaviour>.GetSingletons();
+					var singletons = Core.Singleton<MonoBehaviour>.singletons;
 					if (singletons.Count == 0) {
 						EditorGUILayout.LabelField("Count: 0");
 					} else {
@@ -63,10 +129,10 @@ namespace MT.Packages.LD47.Editor
 				}
 				EditorGUI.EndDisabledGroup();
 			}
-			EditorGUILayout.EndScrollView();
+			EndScrollView();
 
 			EditorGUILayout.LabelField("Pools", EditorStyles.boldLabel);
-			_scrollPositions[1] = EditorGUILayout.BeginScrollView(_scrollPositions[1], Padding(0, 5, 0, 0), Expanded);
+			BeginScrollView();
 			{
 				EditorGUI.BeginDisabledGroup(true);
 				{
@@ -81,13 +147,10 @@ namespace MT.Packages.LD47.Editor
 				}
 				EditorGUI.EndDisabledGroup();
 			}
-			EditorGUILayout.EndScrollView();
+			EndScrollView();
 
-			// if (!Mirror.NetworkServer.active) {
-			// 	return;
-			// }
 			EditorGUILayout.LabelField("Character", EditorStyles.boldLabel);
-			_scrollPositions[3] = EditorGUILayout.BeginScrollView(_scrollPositions[3], Padding(0, 5, 0, 0), Expanded);
+			BeginScrollView();
 			{
 				EditorGUI.BeginDisabledGroup(true);
 				{
@@ -105,33 +168,13 @@ namespace MT.Packages.LD47.Editor
 				}
 				EditorGUI.EndDisabledGroup();
 			}
-			EditorGUILayout.EndScrollView();
+			EndScrollView();
 		}
 
-		Character character;
-
 		void OnGUI_1() {
-			_scrollPositions[4] = EditorGUILayout.BeginScrollView(_scrollPositions[4], Padding(0, 5, 0, 0), Expanded);
+			BeginScrollView();
 
-			EditorGUILayout.LabelField("Character", EditorStyles.boldLabel);
-			EditorGUILayout.BeginHorizontal();
-			{
-				character = EditorGUILayout.ObjectField(character, typeof(Character), true) as Character;
-				if (character) {
-					if (GUILayout.Button("Clear", GUILayout.Width(70))) {
-						character = null;
-					}
-				} else if (GUILayout.Button("Find", GUILayout.Width(70))) {
-					character = FindObjectOfType<Character>();
-					if (character) {
-						Selection.activeGameObject = character.gameObject;
-					}
-				}
-			}
-			EditorGUILayout.EndHorizontal();
-
-			if (character) {
-				// PlayerController.instance.mode = (PlayerController.Mode) EditorGUILayout.EnumPopup("Mode", PlayerController.instance.mode);
+			if (characters.Draw("Character", out var character)) {
 
 				EditorGUI.BeginDisabledGroup(true);
 				EditorGUILayout.Toggle("Is Bot", character.isBot);
@@ -151,10 +194,9 @@ namespace MT.Packages.LD47.Editor
 					EditorGUI.EndDisabledGroup();
 				}
 
-				character.TryGetComponent(out CharacterBot bot);
-				if (bot) {
-					botFoldout = EditorGUILayout.Foldout(botFoldout, "Bot");
-					if (botFoldout) {
+				if (character.TryGetComponent(out CharacterBot bot)) {
+					GUILayout.Space(5);
+					if (Foldout(bot, "Bot")) {
 						EditorGUI.BeginDisabledGroup(true);
 						{
 							var botTarget = bot.target;
@@ -176,41 +218,70 @@ namespace MT.Packages.LD47.Editor
 					}
 				}
 			}
-			EditorGUILayout.EndScrollView();
+			EndScrollView();
 		}
 
-		Gravitation gravitation;
-		Transform gravitationTransform;
-		float gravitationVelocity;
-
 		void OnGUI_2() {
-			_scrollPositions[5] = EditorGUILayout.BeginScrollView(_scrollPositions[5], Padding(0, 5, 0, 0), Expanded);
-			EditorGUILayout.LabelField("Gravitation", EditorStyles.boldLabel);
-			EditorGUILayout.BeginHorizontal();
-			gravitation = EditorGUILayout.ObjectField(gravitation, typeof(Gravitation), true) as Gravitation;
-			if (gravitation) {
-				if (GUILayout.Button("Clear", GUILayout.Width(70))) {
-					gravitation = null;
+			BeginScrollView();
+			{
+				if (gravitations.Draw("Gravitation", out var gravitation)) {
+					if (Event.current.modifiers == EventModifiers.Shift && gravitation && Selection.activeTransform) {
+						gravitationTransforms = Selection.transforms;
+					} else {
+						gravitationTransforms = null;
+					}
+				} else {
+					gravitationTransforms = null;
 				}
-			} else if (GUILayout.Button("Find", GUILayout.Width(70))) {
-				gravitation = FindObjectOfType<Gravitation>();
 			}
-			EditorGUILayout.EndHorizontal();
-			if (Event.current.modifiers == EventModifiers.Shift && gravitation && Selection.activeTransform) {
-				gravitationTransform = Selection.activeTransform;
-			} else {
-				gravitationTransform = null;
-			}
-			EditorGUILayout.EndScrollView();
+			EndScrollView();
+		}
+
+		void OnInspectorUpdate() {
+			Repaint();
 		}
 
 		void Update() {
-			if (gravitation && gravitationTransform) {
-				var eulerAngles = gravitationTransform.eulerAngles;
-				var z = Utils.GetAngle2D(gravitationTransform.position, gravitation.transform.position);
-				eulerAngles.z = Mathf.SmoothDampAngle(eulerAngles.z, z, ref gravitationVelocity, .05f);
-				gravitationTransform.eulerAngles = eulerAngles;
+			if (gravitations.TryGetValue(out var gravitation) && gravitationTransforms != null) {
+				foreach (var gravitationTransform in gravitationTransforms) {
+					var eulerAngles = gravitationTransform.eulerAngles;
+					var z = Utility.GetAngle2D(gravitationTransform.position, gravitation.transform.position);
+					eulerAngles.z = Mathf.SmoothDampAngle(eulerAngles.z, z, ref gravitationVelocity, .05f);
+					gravitationTransform.eulerAngles = eulerAngles;
+				}
 			}
+		}
+
+		void BeginScrollView(float height = 0) {
+			while (scrollPositions.Count <= scrollPositionIndex) {
+				scrollPositions.Add(new Vector2());
+			}
+			GUILayoutOption[] options = height == 0 ? Expanded : new[] { GUILayout.Height(height) };
+			scrollPositions[scrollPositionIndex] = EditorGUILayout.BeginScrollView(
+				scrollPositions[scrollPositionIndex], Padding(0, 5, 0, 0), options
+			);
+			scrollPositionIndex++;
+		}
+
+		void EndScrollView() {
+			EditorGUILayout.EndScrollView();
+		}
+
+		bool Foldout(Object referenceObject, string content) {
+			if (!foldouts.ContainsKey(referenceObject)) {
+				foldouts.Add(referenceObject, false);
+			}
+			var foldout = foldouts[referenceObject];
+			var color = GUI.color;
+			GUI.color = foldout ? Color.white : new Color(1, 1, 1, .5f);
+			if (GUILayout.Button((foldout ? "▼" : "▶") + " " + content, new GUIStyle(GUI.skin.button) {
+				alignment = TextAnchor.MiddleLeft
+			})) {
+				foldout = !foldout;
+			}
+			GUI.color = color;
+			foldouts[referenceObject] = foldout;
+			return foldout;
 		}
 	}
 }

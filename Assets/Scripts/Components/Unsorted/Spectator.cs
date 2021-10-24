@@ -2,7 +2,7 @@
 
 namespace MT.Packages.LD47
 {
-	public class Spectator : Singleton<Spectator>
+	public class Spectator : Core.Singleton<Spectator>
 	{
 		public float speed = 1;
 

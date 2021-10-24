@@ -5,13 +5,14 @@ namespace MT.Packages.LD47
 {
 	public class NetworkPosition : NetworkBehaviour
 	{
-		[ReadOnly(duringPlayMode = true)]
+		[Core.Attributes.ReadOnly(onlyDuringPlayMode = true)]
 		[SerializeField] float interval = 0.075f;
+		[SerializeField] float minDistance = 4;
 
 		[SerializeField] bool clientAuthoriy = false;
 
-		Timer timer;
-		SmoothTransformPosition position;
+		Core.Timer timer;
+		Core.SmoothTransformPosition position;
 
 		bool isMine { get { return hasAuthority || (!clientAuthoriy && isServer); } }
 
@@ -22,6 +23,7 @@ namespace MT.Packages.LD47
 
 		void Update() {
 			if (!isMine) {
+				position.minDistance = minDistance;
 				position.Update();
 				return;
 			}

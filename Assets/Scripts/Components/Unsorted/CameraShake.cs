@@ -2,7 +2,7 @@
 
 namespace MT.Packages.LD47
 {
-    public class CameraShake : Singleton<CameraShake>
+    public class CameraShake : Core.Singleton<CameraShake>
     {
         [SerializeField, Range(0, 1)] float shake;
         [SerializeField] Vector2 noise = new Vector2(1, 10);

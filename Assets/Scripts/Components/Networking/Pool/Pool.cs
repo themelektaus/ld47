@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MT.Packages.LD47
 {
-	public abstract class Pool : Unique
+	public abstract class Pool : Core.Unique
 	{
 		public Pool_Object objectPrefab;
 		public int poolSize = 50;
@@ -18,9 +18,9 @@ namespace MT.Packages.LD47
 			return GetAll().Where(x => x is T && x.objectPrefab == poolObject).FirstOrDefault() as T;
 		}
 
-		[ReadOnly] public List<Pool_Object> localObjects = new List<Pool_Object>();
+		[Core.Attributes.ReadOnly] public List<Pool_Object> localObjects = new List<Pool_Object>();
 
-		[ReadOnly, SerializeField] uint lastObjectID;
+		[Core.Attributes.ReadOnly, SerializeField] uint lastObjectID;
 
 		protected uint NextObjectID() {
 			return ++lastObjectID;
@@ -40,7 +40,7 @@ namespace MT.Packages.LD47
 		}
 
 		protected Pool_Object Spawn(byte ownerRingIndex, byte ownerFraction) {
-			if (Utils.TryGetMyID(out var id)) {
+			if (Utility.TryGetMyID(out var id)) {
 				return Spawn(id, ownerRingIndex, ownerFraction, ++lastObjectID);
 			}
 			return null;
@@ -91,6 +91,12 @@ namespace MT.Packages.LD47
 
 		public void Destroy(Pool_ObjectInfo info) {
 			if (TryGetObject(info, out var localObject)) {
+				localObject.gameObject.SetActive(false);
+			}
+		}
+
+		public void DestroyAll() {
+			foreach (var localObject in localObjects) {
 				localObject.gameObject.SetActive(false);
 			}
 		}

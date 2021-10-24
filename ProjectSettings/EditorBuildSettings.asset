@@ -6,9 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Multiplayer.unity
+    path: Assets/Game.unity
     guid: 7d356e4a2c910cb4cbf0fc76d4a09574
   - enabled: 1
-    path: Assets/Multiplayer - Map 1.unity
+    path: Assets/Titlescreen.unity
+    guid: 5c39cc46a5e6961479987ff31a04fc72
+  - enabled: 1
+    path: Assets/Character Editor.unity
+    guid: 93c9474949323ca4db6f749160a8fe49
+  - enabled: 1
+    path: Assets/Map 1.unity
     guid: 4935d42435279af4598156536de0b669
   m_configObjects: {}

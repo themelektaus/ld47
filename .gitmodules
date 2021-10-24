@@ -1,0 +1,21 @@
+[submodule "Assets/MT Packages/Asset Usage Detector"]
+	path = Assets/MT Packages/Asset Usage Detector
+	url = https://gitlab.steinalt.online/mt-packages/asset-usage-detector.git
+[submodule "Assets/MT Packages/Audio System"]
+	path = Assets/MT Packages/Audio System
+	url = https://gitlab.steinalt.online/mt-packages/audio-system.git
+[submodule "Assets/MT Packages/Core"]
+	path = Assets/MT Packages/Core
+	url = https://gitlab.steinalt.online/mt-packages/core.git
+[submodule "Assets/MT Packages/Event System"]
+	path = Assets/MT Packages/Event System
+	url = https://gitlab.steinalt.online/mt-packages/event-system.git
+[submodule "Assets/MT Packages/Interpolation Curve"]
+	path = Assets/MT Packages/Interpolation Curve
+	url = https://gitlab.steinalt.online/mt-packages/interpolation-curve.git
+[submodule "Assets/MT Packages/Logging"]
+	path = Assets/MT Packages/Logging
+	url = https://gitlab.steinalt.online/mt-packages/logging.git
+[submodule "Assets/MT Packages/More Tags"]
+	path = Assets/MT Packages/More Tags
+	url = https://gitlab.steinalt.online/mt-packages/more-tags.git

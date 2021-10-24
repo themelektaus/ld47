@@ -3,21 +3,24 @@
 namespace MT.Packages.LD47
 {
 	[RequireComponent(typeof(Camera))]
-	public class CameraControl : Singleton<CameraControl>
+	public class CameraControl : Core.Singleton<CameraControl>
 	{
 		public float characterReceiveDamageShake = .6f;
 		public float enemyReceiveDamageShake = .3f;
 
-		[Range(-1, 60)] public int targetFrameRate = 60;
+		[Range(-1, 60), Core.Attributes.ReadOnly(onlyDuringPlayMode = true)]
+		public int targetFrameRate = 60;
 
-		[SerializeField, Range(4, 20)] float targetOrthographicSize = 10;
+		[Range(4, 20), SerializeField]
+		float targetOrthographicSize = 10;
+
 		[SerializeField, Range(0.01f, 2)] float zoomDuration = .2f;
 
 		[SerializeField] string wheelAxisName = "Mouse ScrollWheel";
 		[SerializeField] float wheelSensitivity = 5;
 
 		float velocity;
-		SimpleInterpolation interpolation;
+		SimpleInterpolation2D interpolation;
 
 		protected override void Awake() {
 			base.Awake();
@@ -27,7 +30,7 @@ namespace MT.Packages.LD47
 			} else {
 				Application.targetFrameRate = targetFrameRate;
 			}
-			interpolation = GetComponent<SimpleInterpolation>();
+			interpolation = GetComponent<SimpleInterpolation2D>();
 		}
 
 		void Update() {
@@ -42,6 +45,15 @@ namespace MT.Packages.LD47
 		protected override void OnDestroy() {
 			Application.targetFrameRate = -1;
 			base.OnDestroy();
+		}
+
+		public void Reset(float targetOrthographicSize) {
+			this.targetOrthographicSize = targetOrthographicSize;
+			var position = transform.localPosition;
+			position.x = 0;
+			position.y = 0;
+			transform.localPosition = position;
+			transform.localRotation = Quaternion.identity;
 		}
 
 		public void SetTarget(Transform target, float interpolationSpeed, float rotationSmoothness) {

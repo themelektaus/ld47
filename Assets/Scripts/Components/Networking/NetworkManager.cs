@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using MT.Packages.Core;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -13,7 +13,7 @@ namespace MT.Packages.LD47
 {
 	public partial class NetworkManager : Mirror.NetworkManager
 	{
-		public static NetworkManager self;
+		public static NetworkManager instance;
 
 		public static List<MonoBehaviour> entities = new List<MonoBehaviour>();
 
@@ -33,11 +33,11 @@ namespace MT.Packages.LD47
 				.character;
 		}
 
-		public static Enemy GetClosestEnemy(byte ringIndex, Vector2 position, float maxDistance = 0) {
+		public static Enemy GetClosestAttackingEnemy(byte ringIndex, Vector2 position, float maxDistance = 0) {
 			return entities
 				.Where(x => x is Enemy)
 				.Select(x => x as Enemy)
-				.Where(x => x.isReadyAndAlive && x.GetRingIndex() == ringIndex)
+				.Where(x => x.isReadyAndAlive && x.state == Enemy.State.Attack && x.GetRingIndex() == ringIndex)
 				.Select(enemy => {
 					var magnitude = ((Vector2) enemy.transform.position - position).magnitude;
 					return (enemy, magnitude);
@@ -55,34 +55,21 @@ namespace MT.Packages.LD47
 		public static void Unregister(MonoBehaviour entity) {
 			entities.Remove(entity);
 			if (entity is Character character) {
-				Utils.SendToClients((Pool_Message_DisableAll) character.netId, true);
+				Utility.SendToClients((Pool_Message_DisableAll) character.netId, true);
 			}
 		}
 
+		public bool isHost;
+
+		Animator gameStateMachine;
+
 		public override void Awake() {
-			if (self) {
-				Debug.LogError("Another NetworkManager already exists :/");
+			if (!this.SetSingleton(ref instance)) {
+				return;
 			}
-			self = this;
-			Audio.AudioLibrary.forcedOwner = this;
+			instance = this;
+			gameStateMachine = GetComponent<Animator>();
 			base.Awake();
-			if (SceneManager.sceneCount == 1) {
-				SceneManager.LoadScene(1, LoadSceneMode.Additive);
-			}
-#if UNITY_SERVER
-			var startMenu = GameObject.FindGameObjectWithTag("Start Menu");
-			if (startMenu) {
-				startMenu.SetActive(false);
-			}
-			StartServer();
-#elif !UNITY_EDITOR
-			var startMenu = GameObject.FindGameObjectWithTag("Start Menu");
-			if (startMenu) {
-				startMenu.SetActive(false);
-			}
-			networkAddress = "cloudbase.tk";
-			StartClient();
-#endif
 		}
 
 		public override void OnStartServer() {
@@ -96,8 +83,21 @@ namespace MT.Packages.LD47
 		}
 
 		public void RespawnPlayer() {
-			if (CharacterController.exists && CharacterController.instance.character.isDead) {
+			if (CharacterController.instance && CharacterController.instance.character.isDead) {
 				CharacterController.instance.Spawn();
+			}
+		}
+
+		public void SetTrigger(string name) {
+			gameStateMachine.SetTrigger(name);
+		}
+
+		[Server]
+		public void Server_SendCharacterSkins() {
+			foreach (var character in entities.Where(x => x is Character).Select(x => x as Character)) {
+				if (character.animator.TryGetComponent(out CharacterSkin skin)) {
+					character.ClientRpc_ApplySkin(skin.data);
+				}
 			}
 		}
 

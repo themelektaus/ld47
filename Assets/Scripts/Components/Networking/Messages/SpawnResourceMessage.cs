@@ -1,4 +1,5 @@
 ﻿using Mirror;
+using MT.Packages.Core;
 using UnityEngine;
 
 namespace MT.Packages.LD47
@@ -15,14 +16,14 @@ namespace MT.Packages.LD47
 				resourceName = resourceName,
 				position = position
 			};
-			if (Utils.SendToServer(message, true)) {
+			if (Utility.SendToServer(message, true)) {
 				return;
 			}
 			OnServerReceive(message);
 		}
 
 		public static void OnServerReceive(SpawnResourceMessage message) {
-			var @object = Resources.Load<GameObject>(message.resourceName);
+			var @object = Core.Cache.Get(message.resourceName);
 			var gameObject = Object.Instantiate(@object).ToTempInstance();
 			gameObject.transform.position = message.position;
 			if (gameObject.TryGetComponent<IOwner>(out var owner)) {
