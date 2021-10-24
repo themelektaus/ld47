@@ -53,3 +53,4 @@ debug.log
 enet_log.txt
 
 Assets/PlayerPrefsEditor/
+.Backup/
